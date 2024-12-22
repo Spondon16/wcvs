@@ -78,6 +78,11 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 	var repRequest reportRequest
 
 	rUrl := Config.Website.Url.String()
+	// Überprüfen, ob der String genau zwei `//` enthält
+	if strings.Count(rUrl, "/") == 2 && !strings.HasPrefix(appendStr, "/") {
+		// append `/`, so e.g. https://example%0A does not throw an error when building the request
+		rUrl += "/"
+	}
 	req, err = http.NewRequest("GET", rUrl+appendStr, nil)
 	if err != nil {
 		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: http.NewRequest: %s\n", appendStr, err.Error())
