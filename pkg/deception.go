@@ -117,7 +117,7 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 			return errors.New(msg)
 		}
 
-		if resp.StatusCode != Config.Website.StatusCode {
+		if resp.StatusCode != Config.Website.StatusCode && resp.StatusCode != 404 && resp.StatusCode != 400 {
 			msg = fmt.Sprintf("Unexpected Status Code %d for webCacheDeceptionTemplate: %s\n", resp.StatusCode, appendStr)
 			Print(msg, Yellow)
 		}
