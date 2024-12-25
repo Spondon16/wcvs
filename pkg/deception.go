@@ -159,7 +159,7 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 	indicValue = strings.TrimSpace(strings.ToLower(resp.Header.Get(Config.Website.Cache.Indicator)))
 
 	// check if there's a cache hit and if the body didn't change (otherwise it could be a cached error page, for example)
-	if checkCacheHit(indicValue) && string(body) == Config.Website.Body {
+	if checkCacheHit(indicValue, "") && string(body) == Config.Website.Body {
 		repResult.Vulnerable = true
 		repRequest.Reason = "The response got cached due to Web Cache Deception"
 		msg = fmt.Sprintf("%s was successfully decepted! appended: %s\n", rUrl, appendStr)

@@ -209,11 +209,13 @@ func searchBodyHeadersForString(cb string, body string, headers http.Header) boo
 }
 
 // check if cache was hit
-func checkCacheHit(value string) bool {
-	indicator := Config.Website.Cache.Indicator
+func checkCacheHit(value string, indicator string) bool {
+	if indicator == "" {
+		indicator = Config.Website.Cache.Indicator
+	}
 	if strings.EqualFold("age", indicator) {
 		value = strings.TrimSpace(value)
-		if value != "0" {
+		if value != "0" && value != "" {
 			return true
 		}
 	} else if strings.EqualFold("x-iinfo", indicator) {

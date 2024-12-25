@@ -680,7 +680,7 @@ func ScanParameterCloaking() reportResult {
 					m.Unlock()
 				}
 				indicValue := respHeader.Get(cache.Indicator)
-				if checkCacheHit(indicValue) {
+				if checkCacheHit(indicValue, cache.Indicator) {
 					m.Lock()
 					unkeyed_parameter = append(unkeyed_parameter, s)
 					m.Unlock()

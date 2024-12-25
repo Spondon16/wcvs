@@ -329,7 +329,7 @@ func checkIfAlwaysMiss(cache CacheStruct) (bool, error) {
 	}
 
 	indicValue := strings.TrimSpace(strings.ToLower(resp.Header.Get(cache.Indicator)))
-	if !checkCacheHit(indicValue) {
+	if !checkCacheHit(indicValue, cache.Indicator) {
 		addCachebusterMap("always-miss")
 
 		msg := "cache returns always miss"
@@ -470,7 +470,7 @@ func cachebusterCookie(cache *CacheStruct) []error {
 			}
 
 			indicValue := strings.TrimSpace(strings.ToLower(resp.Header.Get(cache.Indicator)))
-			if checkCacheHit(indicValue) {
+			if checkCacheHit(indicValue, cache.Indicator) {
 				// If there is a hit, the cachebuster didn't work
 				msg := fmt.Sprintf("%s was not successful (Cookie)\n", identifier)
 				PrintVerbose(msg, NoColor, 2)
@@ -520,7 +520,7 @@ func cachebusterCookie(cache *CacheStruct) []error {
 				}
 
 				indicValue = strings.TrimSpace(strings.ToLower(resp.Header.Get(cache.Indicator)))
-				if checkCacheHit(indicValue) {
+				if checkCacheHit(indicValue, cache.Indicator) {
 					// If there is a hit, the cachebuster didn't work
 					msg := fmt.Sprintf("%s was not successful (Cookie)\n", identifier)
 					PrintVerbose(msg, NoColor, 2)
@@ -687,7 +687,7 @@ func cachebusterHeader(cache *CacheStruct) []error {
 			}
 
 			indicValue := strings.TrimSpace(strings.ToLower(resp.Header.Get(cache.Indicator)))
-			if checkCacheHit(indicValue) {
+			if checkCacheHit(indicValue, cache.Indicator) {
 				// If there is a hit, the cachebuster didn't work
 				msg := fmt.Sprintf("%s was not successful (Header)\n", identifier)
 				PrintVerbose(msg, NoColor, 2)
@@ -742,7 +742,7 @@ func cachebusterHeader(cache *CacheStruct) []error {
 				}
 
 				indicValue = strings.TrimSpace(strings.ToLower(resp.Header.Get(cache.Indicator)))
-				if checkCacheHit(indicValue) {
+				if checkCacheHit(indicValue, cache.Indicator) {
 					// If there is a hit, the cachebuster didn't work
 					msg := fmt.Sprintf("%s was not successful (Header)\n", identifier)
 					PrintVerbose(msg, NoColor, 2)
@@ -879,7 +879,7 @@ func cachebusterParameter(cache *CacheStruct) error {
 		}
 
 		indicValue := strings.TrimSpace(strings.ToLower(resp.Header.Get(cache.Indicator)))
-		if checkCacheHit(indicValue) {
+		if checkCacheHit(indicValue, cache.Indicator) {
 			// If there is a hit, the cachebuster didn't work
 			msg := fmt.Sprintf("%s was not successful (Parameter)\n", identifier)
 			PrintVerbose(msg, NoColor, 2)
@@ -925,7 +925,7 @@ func cachebusterParameter(cache *CacheStruct) error {
 			}
 
 			indicValue = strings.TrimSpace(strings.ToLower(resp.Header.Get(cache.Indicator)))
-			if checkCacheHit(indicValue) {
+			if checkCacheHit(indicValue, cache.Indicator) {
 				// If there is a hit, the cachebuster didn't work
 				msg := fmt.Sprintf("%s was not successful (Parameter)\n", identifier)
 				PrintVerbose(msg, NoColor, 2)
@@ -1085,7 +1085,7 @@ func cachebusterHTTPMethod(cache *CacheStruct) []error {
 			}
 
 			indicValue := strings.TrimSpace(strings.ToLower(resp.Header.Get(cache.Indicator)))
-			if checkCacheHit(indicValue) {
+			if checkCacheHit(indicValue, cache.Indicator) {
 				// If there is a hit, the cachebuster didn't work
 				msg := fmt.Sprintf("%s was not successful (HTTP Method)\n", identifier)
 				PrintVerbose(msg, NoColor, 2)
@@ -1129,7 +1129,7 @@ func cachebusterHTTPMethod(cache *CacheStruct) []error {
 				}
 
 				indicValue = strings.TrimSpace(strings.ToLower(resp.Header.Get(cache.Indicator)))
-				if checkCacheHit(indicValue) {
+				if checkCacheHit(indicValue, cache.Indicator) {
 					// If there is a hit, the cachebuster didn't work
 					msg := fmt.Sprintf("%s was not successful (HTTP Method)\n", identifier)
 					PrintVerbose(msg, NoColor, 2)
