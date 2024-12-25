@@ -106,7 +106,7 @@ func ParseFlags(vers string) {
 	appendBoolean(&requestOptions, &Config.DeclineCookies,
 		"declineCookies", "dc", false, "Do you don't want to use cookies, which are received in the response of the first request?")
 	appendString(&requestOptions, &Config.CacheBuster,
-		"cachebuster", "cb", "cb", "Specify the cachebuster to use. The default value is cachebuster")
+		"cachebuster", "cb", "cbwcvs", "Specify the cachebuster to use. The default value is cbwcvs")
 	appendString(&requestOptions, &setCookiesStr,
 		"setcookies", "sc", "", "Set a Cookie. Otherwise use file: to specify a file with urls. E.g. -sc uid=123 or -sc file:templates/cookie_list")
 	appendString(&requestOptions, &setHeadersStr,

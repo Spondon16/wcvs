@@ -29,7 +29,7 @@ func ScanCookies() reportResult {
 
 		rUrl := Config.Website.Url.String()
 		cb := randInt()
-		success := fmt.Sprintf("Cookie %s was successfully poisoned! cb: %s poison: %s\n", c.Name, cb, poison)
+		success := fmt.Sprintf("Cookie %s was successfully poisoned! cbwcvs: %s poison: %s\n", c.Name, cb, poison)
 		identifier := c.Name + "=" + c.Value
 		msg = fmt.Sprintf("Overwriting %s=%s with %s=%s\n", c.Name, c.Value, c.Name, poison)
 		Print(msg, NoColor)
@@ -62,7 +62,7 @@ func ScanCookies() reportResult {
 			rp.poison += getRespSplit()
 			rp.url = rUrl
 			rp.cb = randInt()
-			rp.success = fmt.Sprintf("Cookie %s successfully poisoned the header %s with Response Splitting! cb: %s poison: %s\n", c.Name, responseSplittingHeader, rp.cb, rp.poison)
+			rp.success = fmt.Sprintf("Cookie %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", c.Name, responseSplittingHeader, rp.cb, rp.poison)
 			rp.identifier += " response splitting"
 
 			msg = fmt.Sprintf("Overwriting %s=%s with %s=%s\n", c.Name, c.Value, c.Name, rp.poison)
@@ -125,7 +125,7 @@ func ScanForwardingHeaders() reportResult {
 func ForwardHeadersTemplate(repResult *reportResult, headers []string, values []string, identifier string, poison string, duplicateHeaders bool) {
 	rUrl := Config.Website.Url.String()
 	cb := randInt()
-	success := fmt.Sprintf("%s was successfully poisoned! cb: %s poison: %s\n", headers, cb, values)
+	success := fmt.Sprintf("%s was successfully poisoned! cbwcvs: %s poison: %s\n", headers, cb, values)
 
 	rp := requestParams{
 		repResult:        repResult,
@@ -153,7 +153,7 @@ func ForwardHeadersTemplate(repResult *reportResult, headers []string, values []
 		rp.poison += getRespSplit()
 		rp.url = rUrl
 		rp.cb = randInt()
-		rp.success = fmt.Sprintf("%s successfully poisoned the header %s with Response Splitting! cb: %s poison: %s\n", headers, responseSplittingHeader, rp.cb, rp.values)
+		rp.success = fmt.Sprintf("%s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", headers, responseSplittingHeader, rp.cb, rp.values)
 		rp.identifier += " response splitting"
 
 		issueRequest(rp)
@@ -234,7 +234,7 @@ func ScanHeaders(headerList []string) reportResult {
 			rUrl := Config.Website.Url.String()
 			poison := randInt()
 			cb := randInt()
-			success := fmt.Sprintf("Header %s was successfully poisoned! cb: %s poison: %s\n", header, cb, poison)
+			success := fmt.Sprintf("Header %s was successfully poisoned! cbwcvs: %s poison: %s\n", header, cb, poison)
 			identifier := fmt.Sprintf("header %s", header)
 
 			rp := requestParams{
@@ -262,7 +262,7 @@ func ScanHeaders(headerList []string) reportResult {
 				rp.url = rUrl
 				rp.cb = randInt()
 				rp.poison += getRespSplit()
-				rp.success = fmt.Sprintf("Header %s successfully poisoned the header %s with Response Splitting! cb: %s poison: %s\n", header, responseSplittingHeader, rp.cb, rp.poison)
+				rp.success = fmt.Sprintf("Header %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", header, responseSplittingHeader, rp.cb, rp.poison)
 				rp.identifier += " response splitting"
 
 				issueRequest(rp)
@@ -338,7 +338,7 @@ func ScanHeaders(headerList []string) reportResult {
 				msg := fmt.Sprintf("Testing now (%d/%d) %s\n", i+1, len(headerList), header)
 				PrintVerbose(msg, NoColor, 2)
 				urlWithCb, cb := addCacheBuster(Config.Website.Url.String(), "", Config.CacheBuster)
-				success := fmt.Sprintf("Header %s was successfully poisoned! cb: %s poison: %s\n", header, cb, poison)
+				success := fmt.Sprintf("Header %s was successfully poisoned! cbwcvs: %s poison: %s\n", header, cb, poison)
 				identifier := fmt.Sprintf("header %s", header)
 
 				rp := requestParams{
@@ -348,7 +348,7 @@ func ScanHeaders(headerList []string) reportResult {
 					identifier:       identifier,
 					poison:           poison,
 					url:              urlWithCb,
-					cb:               cb,
+					cbwcvs:               cb,
 					success:          success,
 					bodyString:       "",
 					forcePost:        false,
@@ -365,7 +365,7 @@ func ScanHeaders(headerList []string) reportResult {
 
 					rp.url, rp.cb = addCacheBuster(Config.Website.Url.String(), "", Config.CacheBuster)
 					rp.poison += getRespSplit()
-					rp.success = fmt.Sprintf("Header %s was successfully poisoned with Response Splitting! cb: %s poison: %s\n", header, rp.cb, rp.poison)
+					rp.success = fmt.Sprintf("Header %s was successfully poisoned with Response Splitting! cbwcvs: %s poison: %s\n", header, rp.cb, rp.poison)
 					rp.identifier += " response splitting"
 
 					issueRequest(rp)
@@ -449,7 +449,7 @@ func ScanParameters(parameterList []string) reportResult {
 			rUrl := Config.Website.Url.String()
 			poison := randInt()
 			cb := randInt()
-			success := fmt.Sprintf("Query Parameter %s was successfully poisoned! cb: %s poison: %s\n", parameter, cb, poison)
+			success := fmt.Sprintf("Query Parameter %s was successfully poisoned! cbwcvs: %s poison: %s\n", parameter, cb, poison)
 			identifier := fmt.Sprintf("parameter %s", parameter)
 
 			rp := requestParams{
@@ -482,7 +482,7 @@ func ScanParameters(parameterList []string) reportResult {
 				rp.parameters = []string{parameter + "=" + rp.poison}
 				rp.url = rUrl
 				rp.cb = randInt()
-				rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting! cb: %s poison: %s\n", parameter, responseSplittingHeader, rp.cb, rp.poison)
+				rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", parameter, responseSplittingHeader, rp.cb, rp.poison)
 				rp.identifier += " response splitting"
 				issueRequest(rp)
 			}
@@ -553,7 +553,7 @@ func ScanFatGET() reportResult {
 				rUrl := Config.Website.Url.String()
 				cb := randInt()
 				bodyString := s + "=" + poison
-				success := fmt.Sprintf("Query Parameter %s was successfully poisoned via %s! cb: %s poison:%s\n", s, identifier, cb, poison)
+				success := fmt.Sprintf("Query Parameter %s was successfully poisoned via %s! cbwcvs: %s poison:%s\n", s, identifier, cb, poison)
 
 				rp := requestParams{
 					repResult:        &repResult,
@@ -582,7 +582,7 @@ func ScanFatGET() reportResult {
 					rp.poison += getRespSplit()
 					rp.bodyString += getRespSplit()
 					rp.identifier += " response splitting"
-					rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s via %s with Response Splitting! cb: %s poison:%s\n", s, responseSplittingHeader, identifier, rp.cb, rp.poison)
+					rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s via %s with Response Splitting! cbwcvs: %s poison:%s\n", s, responseSplittingHeader, identifier, rp.cb, rp.poison)
 
 					issueRequest(rp)
 				}
@@ -723,7 +723,7 @@ func ScanParameterCloaking() reportResult {
 				msg := fmt.Sprintf("Testing now Parameter Cloaking (%d/%d) %s%s%s\n", iu+is+1, len(impactfulQueries)*len(unkeyed_parameter), u, cloak, s)
 				PrintVerbose(msg, NoColor, 2)
 				cb := randInt()
-				success := fmt.Sprintf("Query Parameter %s was successfully poisoned via Parameter Cloaking using %s! cb:%s poison:%s\n", s, u, cb, poison)
+				success := fmt.Sprintf("Query Parameter %s was successfully poisoned via Parameter Cloaking using %s! cbwcvs:%s poison:%s\n", s, u, cb, poison)
 				identifier := fmt.Sprintf("parameter cloaking %s %s", u, s)
 
 				rp := requestParams{
@@ -753,7 +753,7 @@ func ScanParameterCloaking() reportResult {
 					rp.cb = randInt()
 					rp.poison += getRespSplit()
 					rp.parameters = []string{u + "=foobar" + cloak + s + "=" + rp.poison}
-					rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting using %s with Parameter Cloaking! cb:%s poison:%s\n", s, responseSplittingHeader, u, rp.cb, rp.poison)
+					rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting using %s with Parameter Cloaking! cbwcvs:%s poison:%s\n", s, responseSplittingHeader, u, rp.cb, rp.poison)
 					rp.identifier += " response splitting"
 
 					issueRequest(rp)
@@ -902,7 +902,7 @@ func hho(repResult *reportResult) {
 				return
 			}
 
-			msg = fmt.Sprintf("HHO DOS was successfully poisoned! cb: %s \n%s\n", cb, request.URL)
+			msg = fmt.Sprintf("HHO DOS was successfully poisoned! cbwcvs: %s \n%s\n", cb, request.URL)
 			m.Lock()
 			_ = checkPoisoningIndicators(repResult, request, msg, "", "", statusCode1, statusCode2, false, respHeader, false)
 			m.Unlock()
@@ -932,7 +932,7 @@ func headerDOSTemplate(repResult *reportResult, values []string, header string, 
 			PrintVerbose(msg, NoColor, 2)
 			rUrl := Config.Website.Url.String()
 			cb := randInt()
-			success := fmt.Sprintf("%sDOS with header %s was successfully poisoned! cb: %s poison: %s\n", msgextra, header, cb, value)
+			success := fmt.Sprintf("%sDOS with header %s was successfully poisoned! cbwcvs: %s poison: %s\n", msgextra, header, cb, value)
 			identifier := fmt.Sprintf("%s%s with %s", msgextra, header, value)
 
 			rp := requestParams{
@@ -960,7 +960,7 @@ func headerDOSTemplate(repResult *reportResult, values []string, header string, 
 				rp.values[0] += getRespSplit()
 				rp.url = rUrl
 				rp.cb = randInt()
-				rp.success = fmt.Sprintf("%sDOS with header %s successfully poisoned the header %s with Response Splitting! cb: %s poison: %s\n", msgextra, header, responseSplittingHeader, rp.cb, rp.values[0])
+				rp.success = fmt.Sprintf("%sDOS with header %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", msgextra, header, responseSplittingHeader, rp.cb, rp.values[0])
 				rp.identifier += getRespSplit() + " with response splitting"
 
 				issueRequest(rp)
@@ -1075,7 +1075,7 @@ func ScanCSS() reportResult {
 
 			if strings.Contains(string(body), cb) {
 				PrintNewLine()
-				msg = fmt.Sprintf("A CSS file was successfully poisoned! cb: %s\nURL: %s\n", cb, request.URL)
+				msg = fmt.Sprintf("A CSS file was successfully poisoned! cbwcvs: %s\nURL: %s\n", cb, request.URL)
 				Print(msg, Green)
 				msg = "Reason: CSS reflects URL\n"
 				Print(msg, Green)
