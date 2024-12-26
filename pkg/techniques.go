@@ -527,7 +527,7 @@ func ScanFatGET() reportResult {
 			identifier = "POST Fat GET"
 			forcePost = true
 		} else {
-			identifier = fmt.Sprintf("%s Fat GET", headers[method-2])
+			identifier = fmt.Sprintf("%s Fat GET", headers[method])
 		}
 		msg := "Testing now " + identifier + "\n"
 		Print(msg, NoColor)
