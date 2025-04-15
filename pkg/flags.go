@@ -143,9 +143,9 @@ func ParseFlags(vers string) {
 
 	// Wordlist Options
 	appendString(&wordlistOptions, &Config.HeaderWordlist,
-		"headerwordlist", "hw", "wordlists/headers", "Wordlist for headers to test. Default path is 'wordlists/top-headers'")
-	appendString(&wordlistOptions, &Config.QueryWordlist,
-		"parameterwordlist", "pw", "wordlists/parameters", "Wordlist for query parameters to test. Default path is 'wordlists/top-parameters'")
+		"headerwordlist", "hw", "", "Wordlist for headers to test.")
+	appendString(&wordlistOptions, &Config.ParameterWordlist,
+		"parameterwordlist", "pw", "", "Wordlist for query parameters to test.")
 
 	flag.CommandLine.Usage = help
 

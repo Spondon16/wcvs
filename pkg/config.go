@@ -52,8 +52,8 @@ type (
 		ProxyCertPath string
 		ProxyURL      string
 
-		HeaderWordlist string
-		QueryWordlist  string
+		HeaderWordlist    string
+		ParameterWordlist string
 
 		Limiter *rate.Limiter `json:"-"`
 		Website WebsiteStruct `json:"-"`
@@ -93,26 +93,26 @@ func init() {
 
 func ReadConfigFile() ConfigStruct {
 	config := ConfigStruct{
-		Threads:        0,
-		Recursivity:    0,
-		Verbosity:      0,
-		DoPost:         false,
-		ContentType:    "",
-		QuerySeparator: "",
-		CacheBuster:    "",
-		TimeOut:        0,
-		DeclineCookies: false,
-		Urls:           nil,
-		Cookies:        nil,
-		Headers:        nil,
-		Parameters:     nil,
-		Body:           "",
-		OnlyTest:       "",
-		SkipTest:       "",
-		ProxyCertPath:  "",
-		ProxyURL:       "",
-		HeaderWordlist: "",
-		QueryWordlist:  "",
+		Threads:           0,
+		Recursivity:       0,
+		Verbosity:         0,
+		DoPost:            false,
+		ContentType:       "",
+		QuerySeparator:    "",
+		CacheBuster:       "",
+		TimeOut:           0,
+		DeclineCookies:    false,
+		Urls:              nil,
+		Cookies:           nil,
+		Headers:           nil,
+		Parameters:        nil,
+		Body:              "",
+		OnlyTest:          "",
+		SkipTest:          "",
+		ProxyCertPath:     "",
+		ProxyURL:          "",
+		HeaderWordlist:    "",
+		ParameterWordlist: "",
 		Website: WebsiteStruct{
 			Body:         "",
 			Cookies:      nil,
