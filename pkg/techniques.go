@@ -607,7 +607,7 @@ func ScanParameterCloaking() reportResult {
 		repResult.ErrorMessages = append(repResult.ErrorMessages, msg)
 		return repResult
 	} else {
-		msg := fmt.Sprintf("The following parameters were found to be impactful and will be tested for parameter cloaking:\n%s\n", impactfulQueries)
+		msg := fmt.Sprintf("The following parameters were found to be impactful and will be tested for parameter cloaking: %s\n", impactfulQueries)
 		Print(msg, Cyan)
 	}
 
