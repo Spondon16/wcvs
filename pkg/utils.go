@@ -170,7 +170,7 @@ func addCachebusterParameter(strUrl string, cbvalue string, cb string) (string, 
 		cbvalue = randInt()
 	}
 	if cb == "" {
-		cb = Config.CacheBuster
+		cb = Config.Website.Cache.CBName
 	}
 	if !strings.Contains(strUrl, "?") {
 		strUrl += "?" + cb + "=" + cbvalue

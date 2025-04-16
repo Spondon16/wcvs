@@ -672,8 +672,6 @@ func ScanParameterCloaking() reportResult {
 					return
 				}
 				indicValue := respHeader.Get(cache.Indicator) // TODO add check for timebased cache indicator! + remove then cache.TimeIndicator from the if above
-				msg = fmt.Sprintf(s, indicValue, respHeader, "\n")
-				Print(msg, Red)
 				if checkCacheHit(indicValue, cache.Indicator) {
 					m.Lock()
 					unkeyed_parameters = append(unkeyed_parameters, s)
@@ -699,7 +697,7 @@ func ScanParameterCloaking() reportResult {
 
 	for iu, u := range unkeyed_parameters {
 
-		//its sufficient to only test one unkeyed_parameter as it should behave the same way as the others.
+		//its sufficient to only test one unkeyed_parameter as it should behave the same way as the others. However, in the case of no cache indicator, test all parameters
 		if iu > 0 && cache.Indicator != "" {
 			break
 		}

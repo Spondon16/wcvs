@@ -893,10 +893,10 @@ func cachebusterParameter(cache *CacheStruct, parameterList []string) []error {
 			cache.CBisHeader = false
 			cache.CBisCookie = false
 			cache.CBisHTTPMethod = false
-			cache.CBName = Config.CacheBuster
+			cache.CBName = parameter
 			cb_parameter = true
 			addHitMissIndicatorMap("time")
-			addCachebusterMap(Config.CacheBuster)
+			addCachebusterMap(parameter)
 
 			msg = fmt.Sprintf("%s was successful (Parameter, time was used as indicator)\n", identifier)
 			Print(msg, Cyan)
@@ -999,9 +999,9 @@ func cachebusterParameter(cache *CacheStruct, parameterList []string) []error {
 					cache.CBisHeader = false
 					cache.CBisCookie = false
 					cache.CBisHTTPMethod = false
-					cache.CBName = Config.CacheBuster
+					cache.CBName = parameter
 					cb_parameter = true
-					addCachebusterMap(Config.CacheBuster)
+					addCachebusterMap(parameter)
 
 					msg := fmt.Sprintf("%s was successful (Parameter)\n", identifier)
 					Print(msg, Cyan)
