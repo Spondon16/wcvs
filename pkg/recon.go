@@ -381,7 +381,7 @@ func cachebusterCookie(cache *CacheStruct) []error {
 
 			var newCookie http.Cookie
 			var cb string
-			for ii := 0; ii < 5*2; ii++ {
+			for ii := range 5 * 2 {
 				weburl := Config.Website.Url.String()
 				if Config.DoPost {
 					req, err = http.NewRequest("POST", weburl, bytes.NewBufferString(Config.Body))
@@ -449,6 +449,8 @@ func cachebusterCookie(cache *CacheStruct) []error {
 
 			msg = fmt.Sprintf("%s was successful (Cookie, time was used as indicator)\n", identifier)
 			Print(msg, Cyan)
+
+			return errSlice
 		} else {
 			// A hit miss Indicator was found. Sending 2 requests, each with a new cachebuster, expecting 2 misses
 			weburl := Config.Website.Url.String()
@@ -562,7 +564,8 @@ func cachebusterCookie(cache *CacheStruct) []error {
 					Print(msg, Cyan)
 
 					cbFoundDifference(times, identifier)
-					continue
+
+					return errSlice
 				}
 			}
 		}
@@ -598,7 +601,7 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 		if cache.Indicator == "" {
 			// No Cache Indicator was found. So time will be used as Indicator
 
-			for ii := 0; ii < 5*2; ii++ {
+			for ii := range 5 * 2 {
 				weburl := Config.Website.Url.String()
 				if Config.DoPost {
 					req, err = http.NewRequest("POST", weburl, bytes.NewBufferString(Config.Body))
@@ -671,7 +674,7 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 			msg = fmt.Sprintf("%s was successful (Header, time was used as indicator)\n", identifier)
 			Print(msg, Cyan)
 
-			continue
+			return errSlice
 		} else {
 			// A hit miss Indicator was found. Sending 2 requests, each with a new cachebuster, expecting 2 misses
 			weburl := Config.Website.Url.String()
@@ -791,7 +794,7 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 					Print(msg, Cyan)
 
 					cbFoundDifference(times, identifier)
-					continue
+					return errSlice
 				}
 			}
 		}
@@ -831,7 +834,7 @@ func cachebusterParameter(cache *CacheStruct, parameterList []string) []error {
 			// No Cache Indicator was found. So time will be used as Indicator
 
 			var urlCb string
-			for ii := 0; ii < 5*2; ii++ {
+			for ii := range 5 * 2 {
 				if ii%2 == 0 {
 					urlCb, _ = addCachebusterParameter(Config.Website.Url.String(), values[i], parameter)
 				}
@@ -1004,6 +1007,8 @@ func cachebusterParameter(cache *CacheStruct, parameterList []string) []error {
 					Print(msg, Cyan)
 
 					cbFoundDifference(times, identifier)
+
+					return errSlice
 				}
 			}
 		}
@@ -1029,7 +1034,7 @@ func cachebusterHTTPMethod(cache *CacheStruct) []error {
 			// No Cache Indicator was found. So time will be used as Indicator
 
 			skip := false
-			for ii := 0; ii < 5*2; ii++ {
+			for ii := range 5 * 2 {
 				weburl := Config.Website.Url.String()
 				if ii%2 == 0 {
 					req, err = http.NewRequest(method, weburl, nil)
@@ -1105,7 +1110,7 @@ func cachebusterHTTPMethod(cache *CacheStruct) []error {
 			msg = fmt.Sprintf("%s was successful (HTTP Method, time was used as indicator)\n", identifier)
 			Print(msg, Cyan)
 
-			continue
+			return errSlice
 		} else {
 			// A hit miss Indicator was found. Sending 2 requests, each with a new cachebuster, expecting 2 misses
 			weburl := Config.Website.Url.String()
@@ -1207,7 +1212,7 @@ func cachebusterHTTPMethod(cache *CacheStruct) []error {
 
 					cbFoundDifference(times, identifier)
 
-					continue
+					return errSlice
 				}
 			}
 		}
