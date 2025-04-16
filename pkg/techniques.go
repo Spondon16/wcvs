@@ -611,10 +611,14 @@ func ScanParameterCloaking() reportResult {
 		Print(msg, Cyan)
 	}
 
-	utm_parameter := []string{"utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"}
-	unkeyed_parameter := []string{}
+	utm_parameters := []string{"utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"}
+	unkeyed_parameters := []string{}
+	parameters_to_test := utm_parameters
+	for k := range Config.Website.Queries {
+		parameters_to_test = append(parameters_to_test, k)
+	}
 
-	/***********Check if urlWithCb already contains utm parameter.
+	/***********TODO Check if urlWithCb already contains utm parameter.
 				Check if ? or querySeperator is needed
 	****************/
 
@@ -633,56 +637,46 @@ func ScanParameterCloaking() reportResult {
 	var wg sync.WaitGroup
 	var m sync.Mutex
 	cache := Config.Website.Cache
-	if cache.Indicator == "" /*|| cache.TimeIndicator*/ {
-		//Add tests for cache.TimeIndicator and cache.Reflection
-		//Cant test if utm_parameter are unkeyed if X-Cache isn't set
-		//So they will be all added as unkeyed_parameter
-		msg := "hit/miss isn't verbose. Can't check which utm_parameter is unkeyed, so all will be used\n"
+	if cache.Indicator == "" || cache.TimeIndicator {
+		msg := "hit/miss isn't verbose. Can't check which parameters unkeyed, so all utm_parameters and query parameters will be used\n"
 		Print(msg, Yellow)
-		unkeyed_parameter = utm_parameter
-	} else {
-		//Test which utm_parameter are unkeyed
-		wg.Add(len(utm_parameter))
+		unkeyed_parameters = parameters_to_test
 
-		for i, s := range utm_parameter {
-			// Parameter Limit for BA
-			if i >= 500 {
-				if i == 500 {
-					Print("Parameter Limit for BA at 500\n", Red)
-				}
-				wg.Done()
-				continue
-			}
+	} else {
+		//Test which parameters are unkeyed
+		wg.Add(len(parameters_to_test))
+
+		for i, s := range parameters_to_test {
 			go func(i int, s string) {
 				defer wg.Done()
 				sem <- 1
-				defer func() { <-sem }() // Freigabe der Semaphore, egal was passiert. Dadurch werden Deadlocks verhindert
+				defer func() { <-sem }() // Prevent Deadlocks
 
-				msg := fmt.Sprintf("Testing now for unkeyed utm parameters (%d/%d) %s\n", i+1, len(utm_parameter), s)
+				msg := fmt.Sprintf("Testing now for unkeyed parameters (%d/%d) %s\n", i+1, len(parameters_to_test), s)
 				PrintVerbose(msg, NoColor, 2)
 
-				identifier := fmt.Sprintf("unkeyed utm %s", s)
+				identifier := fmt.Sprintf("unkeyed parameter %s", s)
 				//TODO: TimeOut behandeln!!!
 				rp := requestParams{
 					identifier: identifier,
 					url:        rUrl,
 					cb:         cb,
-					parameters: []string{s + "=foobar"}, // utm parameter with nonsense value
+					parameters: []string{s + "=foobar"}, // parameter with nonsense value
 				}
 				_, _, _, respHeader, err := firstRequest(rp)
-				if err != nil {
-					if err.Error() == "stop" {
-						return
-					}
+				if err != nil && err.Error() != "stop" { // stop is expected for successful unkeyed parameters,because the first request should be the same as the default/cached request!
 					m.Lock()
 					repResult.HasError = true
 					repResult.ErrorMessages = append(repResult.ErrorMessages, err.Error())
 					m.Unlock()
+					return
 				}
-				indicValue := respHeader.Get(cache.Indicator)
+				indicValue := respHeader.Get(cache.Indicator) // TODO add check for timebased cache indicator! + remove then cache.TimeIndicator from the if above
+				msg = fmt.Sprintf(s, respHeader, "\n")
+				Print(msg, Red)
 				if checkCacheHit(indicValue, cache.Indicator) {
 					m.Lock()
-					unkeyed_parameter = append(unkeyed_parameter, s)
+					unkeyed_parameters = append(unkeyed_parameters, s)
 					m.Unlock()
 				}
 			}(i, s)
@@ -690,11 +684,11 @@ func ScanParameterCloaking() reportResult {
 		wg.Wait()
 	}
 
-	if len(unkeyed_parameter) == 0 {
-		msg := "No unkeyed utm parameters could be found. Parameter Cloaking is not possible using utm parameters\n"
+	if len(unkeyed_parameters) == 0 {
+		msg := "No unkeyed parameters could be found. Parameter Cloaking is not possible.\n"
 		Print(msg, Yellow)
 	} else {
-		msg := fmt.Sprintf("The following utm parameters were found to be unkeyed and will be tested for parameter cloaking:\n %s\n", unkeyed_parameter)
+		msg := fmt.Sprintf("The following parameters were found to be unkeyed and will be used for parameter cloaking:\n %s\n", unkeyed_parameters)
 		Print(msg, Cyan)
 	}
 
@@ -703,7 +697,7 @@ func ScanParameterCloaking() reportResult {
 		cloak = "&"
 	}
 
-	for iu, u := range unkeyed_parameter {
+	for iu, u := range unkeyed_parameters {
 
 		//its sufficient to only test one unkeyed_parameter as it should behave the same way as the others.
 		if iu > 0 && cache.Indicator != "" {
@@ -720,7 +714,7 @@ func ScanParameterCloaking() reportResult {
 				sem <- 1
 				defer func() { <-sem }() // Freigabe der Semaphore, egal was passiert. Dadurch werden Deadlocks verhindert
 
-				msg := fmt.Sprintf("Testing now Parameter Cloaking (%d/%d) %s%s%s\n", iu+is+1, len(impactfulQueries)*len(unkeyed_parameter), u, cloak, s)
+				msg := fmt.Sprintf("Testing now Parameter Cloaking (%d/%d) %s%s%s\n", iu+is+1, len(impactfulQueries)*len(unkeyed_parameters), u, cloak, s)
 				PrintVerbose(msg, NoColor, 2)
 				cb := randInt()
 				success := fmt.Sprintf("Query Parameter %s was successfully poisoned via Parameter Cloaking using %s! cbwcvs:%s poison:%s\n", s, u, cb, poison)
@@ -746,7 +740,7 @@ func ScanParameterCloaking() reportResult {
 
 				// check for response splitting, if poison was reflected in a header
 				if responseSplittingHeader != "" {
-					msg := fmt.Sprintf("Testing now Parameter Cloaking (%d/%d) %s%s%s for Response Splitting, because it was reflected in the header %s\n", iu+is+1, len(impactfulQueries)*len(unkeyed_parameter), u, cloak, s, responseSplittingHeader)
+					msg := fmt.Sprintf("Testing now Parameter Cloaking (%d/%d) %s%s%s for Response Splitting, because it was reflected in the header %s\n", iu+is+1, len(impactfulQueries)*len(unkeyed_parameters), u, cloak, s, responseSplittingHeader)
 					PrintVerbose(msg, Cyan, 1)
 
 					rp.url = rUrl
