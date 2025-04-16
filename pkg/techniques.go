@@ -507,7 +507,7 @@ func ScanFatGET() reportResult {
 		return repResult
 	} else {
 		msg := fmt.Sprintf("The following parameters were found to be impactful and will be tested for parameter cloaking: %s\n", impactfulQueries)
-		Print(msg, NoColor)
+		Print(msg, Cyan)
 	}
 
 	sem := make(chan int, Config.Threads)
@@ -608,7 +608,7 @@ func ScanParameterCloaking() reportResult {
 		return repResult
 	} else {
 		msg := fmt.Sprintf("The following parameters were found to be impactful and will be tested for parameter cloaking:\n%s\n", impactfulQueries)
-		Print(msg, NoColor)
+		Print(msg, Cyan)
 	}
 
 	utm_parameter := []string{"utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"}
@@ -695,7 +695,7 @@ func ScanParameterCloaking() reportResult {
 		Print(msg, Yellow)
 	} else {
 		msg := fmt.Sprintf("The following utm parameters were found to be unkeyed and will be tested for parameter cloaking:\n %s\n", unkeyed_parameter)
-		Print(msg, NoColor)
+		Print(msg, Cyan)
 	}
 
 	cloak := ";"
