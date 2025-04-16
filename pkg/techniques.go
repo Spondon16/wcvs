@@ -41,6 +41,7 @@ func ScanCookies() reportResult {
 			repResult:        &repResult,
 			headers:          []string{""},
 			values:           []string{""},
+			name:             c.Name,
 			identifier:       identifier,
 			poison:           poison,
 			url:              rUrl,
@@ -204,7 +205,12 @@ func ScanHeaders(headerList []string) reportResult {
 	var repResult reportResult
 	repResult.Technique = "Headers"
 
-	sem := make(chan int, Config.Threads)
+	threads := Config.Threads
+	if Config.Website.Cache.CBisHTTPMethod {
+		threads = 1 // No multithreading if HTTP Method is used... Otherwise there will be a lot of false negatives/positives
+		PrintVerbose("Can only scan single threaded because a HTTP Method is used as Cachebuster...\n", Yellow, 1)
+	}
+	sem := make(chan int, threads)
 	var wg sync.WaitGroup
 	wg.Add(len(headerList))
 	var m sync.Mutex
@@ -241,6 +247,7 @@ func ScanHeaders(headerList []string) reportResult {
 				repResult:        &repResult,
 				headers:          []string{header},
 				values:           []string{poison},
+				name:             header,
 				identifier:       identifier,
 				poison:           poison,
 				url:              rUrl,
@@ -280,7 +287,12 @@ func ScanHeaders(headerList []string) reportResult {
 	var repResult reportResult
 	repResult.Technique = "Headers"
 
-	sem := make(chan int, Config.Threads)
+	threads := Config.Threads
+	if Config.Website.Cache.CBisHTTPMethod {
+		threads = 1 // No multithreading if HTTP Method is used... Otherwise there will be a lot of false negatives/positives
+		PrintVerbose("Can only scan single threaded because a HTTP Method is used as Cachebuster...\n", Yellow, 1)
+	}
+	sem := make(chan int, threads)
 	var wg sync.WaitGroup
 	wg.Add(len(headerList))
 	var m sync.Mutex
@@ -419,7 +431,12 @@ func ScanParameters(parameterList []string) reportResult {
 	var repResult reportResult
 	repResult.Technique = "Parameters"
 
-	sem := make(chan int, Config.Threads)
+	threads := Config.Threads
+	if Config.Website.Cache.CBisHTTPMethod {
+		threads = 1 // No multithreading if HTTP Method is used... Otherwise there will be a lot of false negatives/positives
+		PrintVerbose("Can only scan single threaded because a HTTP Method is used as Cachebuster...\n", Yellow, 1)
+	}
+	sem := make(chan int, threads)
 	var wg sync.WaitGroup
 	wg.Add(len(parameterList))
 	var m sync.Mutex
@@ -457,6 +474,7 @@ func ScanParameters(parameterList []string) reportResult {
 				headers:          []string{""},
 				values:           []string{poison},
 				parameters:       []string{parameter + "=" + poison},
+				name:             parameter,
 				identifier:       identifier,
 				poison:           poison,
 				url:              rUrl,
@@ -510,7 +528,12 @@ func ScanFatGET() reportResult {
 		Print(msg, Cyan)
 	}
 
-	sem := make(chan int, Config.Threads)
+	threads := Config.Threads
+	if Config.Website.Cache.CBisHTTPMethod {
+		threads = 1 // No multithreading if HTTP Method is used... Otherwise there will be a lot of false negatives/positives
+		PrintVerbose("Can only scan single threaded because a HTTP Method is used as Cachebuster...\n", Yellow, 1)
+	}
+	sem := make(chan int, threads)
 	var wg sync.WaitGroup
 	wg.Add(len(impactfulQueries))
 	var m sync.Mutex
@@ -533,10 +556,10 @@ func ScanFatGET() reportResult {
 		Print(msg, NoColor)
 
 		for i, s := range impactfulQueries {
-			// Parameter Limit for BA
+			// Parameter Limit
 			if i >= 500 {
 				if i == 500 {
-					Print("Parameter Limit for BA at 500\n", Red)
+					Print("Parameter Limit at 500\n", Red)
 				}
 				wg.Done()
 				continue
@@ -633,7 +656,12 @@ func ScanParameterCloaking() reportResult {
 	}
 	firstRequest(rp)
 
-	sem := make(chan int, Config.Threads)
+	threads := Config.Threads
+	if Config.Website.Cache.CBisHTTPMethod {
+		threads = 1 // No multithreading if HTTP Method is used... Otherwise there will be a lot of false negatives/positives
+		PrintVerbose("Can only scan single threaded because a HTTP Method is used as Cachebuster...\n", Yellow, 1)
+	}
+	sem := make(chan int, threads)
 	var wg sync.WaitGroup
 	var m sync.Mutex
 	cache := Config.Website.Cache
@@ -704,6 +732,14 @@ func ScanParameterCloaking() reportResult {
 		wg.Add(len(impactfulQueries))
 
 		for is, s := range impactfulQueries {
+			// Parameter Limit
+			if is >= 500 {
+				if is == 500 {
+					Print("Parameter Limit at 500\n", Red)
+				}
+				wg.Done()
+				continue
+			}
 
 			poison := randInt()
 
@@ -836,7 +872,12 @@ func hho(repResult *reportResult) {
 	msg := fmt.Sprintf("Testing now HHO with Size Limits of ~80*%d bytes\n", repetitions)
 	PrintVerbose(msg, NoColor, 2)
 
-	sem := make(chan int, Config.Threads)
+	threads := Config.Threads
+	if Config.Website.Cache.CBisHTTPMethod {
+		threads = 1 // No multithreading if HTTP Method is used... Otherwise there will be a lot of false negatives/positives
+		PrintVerbose("Can only scan single threaded because a HTTP Method is used as Cachebuster...\n", Yellow, 1)
+	}
+	sem := make(chan int, threads)
 	var wg sync.WaitGroup
 	wg.Add(len(repetitions))
 	var m sync.Mutex
@@ -908,7 +949,12 @@ func headerDOSTemplate(repResult *reportResult, values []string, header string, 
 	msg := fmt.Sprintf("Testing now %sDOS with header %s and values %s\n", msgextra, header, values)
 	PrintVerbose(msg, NoColor, 2)
 
-	sem := make(chan int, Config.Threads)
+	threads := Config.Threads
+	if Config.Website.Cache.CBisHTTPMethod {
+		threads = 1 // No multithreading if HTTP Method is used... Otherwise there will be a lot of false negatives/positives
+		PrintVerbose("Can only scan single threaded because a HTTP Method is used as Cachebuster...\n", Yellow, 1)
+	}
+	sem := make(chan int, threads)
 	var wg sync.WaitGroup
 	wg.Add(len(values))
 	var m sync.Mutex
@@ -1015,7 +1061,12 @@ func ScanCSS() reportResult {
 	msg := fmt.Sprintf("Testing the following CSS files for poisoning\n%s\n", urls)
 	PrintVerbose(msg, NoColor, 1)
 
-	sem := make(chan int, Config.Threads)
+	threads := Config.Threads
+	if Config.Website.Cache.CBisHTTPMethod {
+		threads = 1 // No multithreading if HTTP Method is used... Otherwise there will be a lot of false negatives/positives
+		PrintVerbose("Can only scan single threaded because a HTTP Method is used as Cachebuster...\n", Yellow, 1)
+	}
+	sem := make(chan int, threads)
 	var wg sync.WaitGroup
 	wg.Add(len(urls))
 	var m sync.Mutex

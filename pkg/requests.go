@@ -25,6 +25,7 @@ type requestParams struct {
 	values     []string
 	parameters []string
 	//cookie           oldCookie
+	name             string
 	identifier       string
 	poison           string
 	url              string
@@ -382,7 +383,7 @@ func issueRequest(rp requestParams) (string, bool) {
 		return "", false
 	}
 
-	impactful := firstRequestPoisoningIndicator(rp.identifier, body1, rp.poison, header1)
+	impactful := firstRequestPoisoningIndicator(rp.identifier, body1, rp.poison, header1, Config.Website.Cache.CBName == rp.name, rp.cb)
 
 	body2, statusCode2, respHeader, err := secondRequest(rp.url, rp.identifier, rp.cb)
 	if err != nil {
@@ -409,14 +410,14 @@ func issueRequest(rp requestParams) (string, bool) {
 	return responseSplittingHeader, impactful
 }
 
-func firstRequestPoisoningIndicator(identifier string, body []byte, poison string, header http.Header) bool {
+func firstRequestPoisoningIndicator(identifier string, body []byte, poison string, header http.Header, identifierIsCB bool, cb string) bool {
 	var reason string
-	if poison != "" && strings.Contains(string(body), poison) {
-		reason = "Response Body contained " + poison
-	}
-	if header != nil && poison != "" {
+	if poison != "" {
+		if strings.Contains(string(body), poison) || (identifierIsCB && strings.Contains(string(body), cb)) { //
+			reason = "Response Body contained " + poison
+		}
 		for x := range header {
-			if strings.Contains(header.Get(x), poison) {
+			if strings.Contains(header.Get(x), poison) || (identifierIsCB && strings.Contains(header.Get(x), cb)) {
 				reason = "Response Body contained " + poison
 			}
 		}
