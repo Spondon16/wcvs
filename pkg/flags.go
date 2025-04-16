@@ -69,11 +69,13 @@ func ParseFlags(vers string) {
 	appendString(&generalOptions, &ignoreStatus,
 		"ignorestatus", "is", "", "Ignore a specific status code for cache poisoning")
 	appendInt(&generalOptions, &Config.CLDiff,
-		"contentlengthdifference", "cldiff", 0, "Threshold for reporting possible Finding, when 'poisoned' response differs more from the original length. Default is 0 (don't check)")
+		"contentlengthdifference", "cldiff", 5000, "Threshold for reporting possible Finding, when 'poisoned' response differs more from the original length. Default is 5000. 0 = don't check. May be prone to false positives!")
 	appendInt(&generalOptions, &Config.HMDiff,
-		"hitmissdifference", "hmdiff", 30, "Threshold for time difference between cache hit and cache miss responses. Default is 30")
+		"hitmissdifference", "hmdiff", 30, "Threshold for time difference (milliseconds) between cache hit and cache miss responses. Default is 30")
 	appendBoolean(&generalOptions, &Config.SkipTimebased,
-		"skiptimebased", "stime", false, "Skip checking if a repsonse gets cached by measuring time differences")
+		"skiptimebased", "stime", false, "Skip checking if a repsonse gets cached by measuring time differences (may be prone to false positives, or increase hitmissdifference)")
+	appendBoolean(&generalOptions, &Config.SkipWordlistCachebuster,
+		"skipwordlistcachbuster", "swordlistcb", false, "Skip using wordlists to check for cachebusters (may be time intensive)")
 	appendString(&generalOptions, &Config.CacheHeader,
 		"cacheheader", "ch", "", "Specify a custom cache header")
 	appendBoolean(&generalOptions, &Config.DisableColor,
@@ -226,7 +228,6 @@ func ParseFlags(vers string) {
 	Config.SkipTest = strings.ToLower(Config.SkipTest)
 }
 
-// TODO: is field []string needed here?
 func readFile(str string, field []string, name string) []string {
 	if strings.HasPrefix(str, "file:") {
 		return ReadLocalFile(str, name)

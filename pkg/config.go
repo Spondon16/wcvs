@@ -11,23 +11,24 @@ var Config ConfigStruct
 
 type (
 	ConfigStruct struct {
-		Threads        int
-		ReqRate        float64
-		Verbosity      int
-		DoPost         bool
-		ContentType    string
-		QuerySeparator string
-		CacheBuster    string
-		TimeOut        int
-		DeclineCookies bool
-		Force          bool
-		UseHTTP        bool
-		CLDiff         int
-		HMDiff         int
-		SkipTimebased  bool
-		CacheHeader    string
-		DisableColor   bool
-		IgnoreStatus   []int
+		Threads                 int
+		ReqRate                 float64
+		Verbosity               int
+		DoPost                  bool
+		ContentType             string
+		QuerySeparator          string
+		CacheBuster             string
+		TimeOut                 int
+		DeclineCookies          bool
+		Force                   bool
+		UseHTTP                 bool
+		CLDiff                  int
+		HMDiff                  int
+		SkipTimebased           bool
+		SkipWordlistCachebuster bool
+		CacheHeader             string
+		DisableColor            bool
+		IgnoreStatus            []int
 
 		Recursivity int
 		RecInclude  string

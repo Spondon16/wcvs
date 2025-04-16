@@ -213,19 +213,24 @@ func CheckCache(stat string, parameterList []string, headerList []string) (Cache
 				}
 			}
 
-			// Check fivth if a parameter from the wordlist can be used as cachebuster
-			if !cache.CBwasFound {
-				errs := cachebusterParameter(&cache, parameterList)
-				if len(errs) > 0 {
-					errSlice = append(errSlice, errs...)
+			if Config.SkipWordlistCachebuster {
+				msg := "Skipping wordlist cachebuster tests\n"
+				PrintVerbose(msg, Yellow, 1)
+			} else {
+				// Check fivth if a parameter from the wordlist can be used as cachebuster
+				if !cache.CBwasFound {
+					errs := cachebusterParameter(&cache, parameterList)
+					if len(errs) > 0 {
+						errSlice = append(errSlice, errs...)
+					}
 				}
-			}
 
-			// Check sixth if a header can be used as cachebuster
-			if !cache.CBwasFound {
-				errs := cachebusterHeader(&cache, headerList)
-				if len(errs) > 0 {
-					errSlice = append(errSlice, errs...)
+				// Check sixth if a header can be used as cachebuster
+				if !cache.CBwasFound {
+					errs := cachebusterHeader(&cache, headerList)
+					if len(errs) > 0 {
+						errSlice = append(errSlice, errs...)
+					}
 				}
 			}
 
