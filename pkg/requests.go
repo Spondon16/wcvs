@@ -382,7 +382,7 @@ func issueRequest(rp requestParams) (string, bool) {
 		return "", false
 	}
 
-	firstRequestPoisoningIndicator(rp.identifier, body1, rp.poison, header1)
+	impactful := firstRequestPoisoningIndicator(rp.identifier, body1, rp.poison, header1)
 
 	body2, statusCode2, respHeader, err := secondRequest(rp.url, rp.identifier, rp.cb)
 	if err != nil {
@@ -394,7 +394,7 @@ func issueRequest(rp requestParams) (string, bool) {
 			rp.repResult.HasError = true
 			rp.repResult.ErrorMessages = append(rp.repResult.ErrorMessages, err.Error())
 		}
-		return "", true
+		return "", impactful
 	}
 	sameBodyLength := len(body1) == len(body2)
 
@@ -406,10 +406,10 @@ func issueRequest(rp requestParams) (string, bool) {
 	}
 	responseSplittingHeader := checkPoisoningIndicators(rp.repResult, request, rp.success, string(body2), rp.poison, statusCode1, statusCode2, sameBodyLength, respHeader, false)
 
-	return responseSplittingHeader, true
+	return responseSplittingHeader, impactful
 }
 
-func firstRequestPoisoningIndicator(identifier string, body []byte, poison string, header http.Header) {
+func firstRequestPoisoningIndicator(identifier string, body []byte, poison string, header http.Header) bool {
 	var reason string
 	if poison != "" && strings.Contains(string(body), poison) {
 		reason = "Response Body contained " + poison
@@ -428,6 +428,9 @@ func firstRequestPoisoningIndicator(identifier string, body []byte, poison strin
 	if reason != "" {
 		msg := identifier + ": " + reason + "\n"
 		Print(msg, Green)
+		return true
+	} else {
+		return false
 	}
 
 }

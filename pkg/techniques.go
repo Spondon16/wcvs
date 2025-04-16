@@ -424,7 +424,7 @@ func ScanParameters(parameterList []string) reportResult {
 	wg.Add(len(parameterList))
 	var m sync.Mutex
 
-	impactfulQueries = nil
+	impactfulQueries = []string{}
 
 	msg := fmt.Sprintf("Testing %d parameters\n", len(parameterList))
 	PrintVerbose(msg, NoColor, 1)
@@ -686,7 +686,7 @@ func ScanParameterCloaking() reportResult {
 		msg := "No unkeyed parameters could be found. Parameter Cloaking is not possible.\n"
 		Print(msg, Yellow)
 	} else {
-		msg := fmt.Sprintf("The following parameters were found to be unkeyed and will be used for parameter cloaking:\n %s\n", unkeyed_parameters)
+		msg := fmt.Sprintf("The following parameters were found to be unkeyed and will be used for parameter cloaking: %s\n", unkeyed_parameters)
 		Print(msg, Cyan)
 	}
 
