@@ -167,7 +167,7 @@ func ScanHTTPRequestSmuggling(proxyURL *url.URL) reportResult {
 
 	path := Config.Website.Url.Path
 	if Config.Website.Cache.CBisParameter {
-		path, _ = addCachebusterParameter(path, "")
+		path, _ = addCachebusterParameter(path, "", Config.Website.Cache.CBName)
 	}
 	if path == "" {
 		path = "/"
@@ -1038,7 +1038,7 @@ func ScanCSS() reportResult {
 			//msg := fmt.Sprintf("Testing now %s Header DOS with %s\n", header, value)
 			//Print(msg, NoColor)
 
-			urlWithCb, cb := addCachebusterParameter(url, "")
+			urlWithCb, cb := addCachebusterParameter(url, "", Config.Website.Cache.CBName)
 
 			identifier := url
 			rp := requestParams{

@@ -83,7 +83,7 @@ func setRequest(req *http.Request, doPost bool, cb string, cookie http.Cookie) {
 	cache := Config.Website.Cache
 	if cb != "" && cache.CBisParameter {
 		var newUrl string
-		newUrl, _ = addCachebusterParameter(req.URL.String(), cb)
+		newUrl, _ = addCachebusterParameter(req.URL.String(), cb, cache.CBName)
 
 		var err error
 		req.URL, err = url.Parse(newUrl)
@@ -165,17 +165,20 @@ func setRequestCookies(req *http.Request, cb string, cookie http.Cookie) {
 	}
 */
 
-func addCachebusterParameter(strUrl string, cb string) (string, string) {
+func addCachebusterParameter(strUrl string, cbvalue string, cb string) (string, string) {
+	if cbvalue == "" {
+		cbvalue = randInt()
+	}
 	if cb == "" {
-		cb = randInt()
+		cb = Config.CacheBuster
 	}
 	if !strings.Contains(strUrl, "?") {
-		strUrl += "?" + Config.CacheBuster + "=" + cb
+		strUrl += "?" + cb + "=" + cbvalue
 	} else {
-		strUrl += Config.QuerySeparator + Config.CacheBuster + "=" + cb
+		strUrl += Config.QuerySeparator + cb + "=" + cbvalue
 	}
 
-	return strUrl, cb
+	return strUrl, cbvalue
 }
 
 /* Create a random long integer */
