@@ -201,7 +201,7 @@ func ParseFlags(vers string) {
 	Config.Cookies = readFile(setCookiesStr, Config.Cookies, "Cookie")
 
 	// Read Header(s)
-	Config.Headers = readFile(setHeadersStr, Config.Headers, "Heades")
+	Config.Headers = readFile(setHeadersStr, Config.Headers, "Headers")
 
 	// Read Parameter(s)
 	Config.Parameters = readFile(setParametersStr, Config.Parameters, "Parameter")

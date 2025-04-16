@@ -582,6 +582,9 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 	} else {
 		headers = append(headers, "Accept-Encoding", "Accept", "Cookie", "Origin")
 		values = append(values, "gzip, deflate, ", "*/*, text/", "wcvs_cookie=")
+		for _, header := range Config.Headers {
+			headers = append(headers, strings.TrimSpace(strings.Split(header, ":")[0])) // Only add headername
+		}
 	}
 
 	var errSlice []error
