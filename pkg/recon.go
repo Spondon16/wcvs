@@ -179,6 +179,9 @@ func CheckCache(stat string, parameterList []string, headerList []string) (Cache
 	}
 
 	if cache.Indicator == "" && !cache.TimeIndicator {
+		msg := "Time measurement as indicator is deactivated, skipping cachebuster tests\n"
+		Print(msg, Yellow)
+	} else {
 		// test for cachebuster, if the cache doesnt always return a miss
 		if !alwaysMiss {
 			// Check first if a parameter can be used as cachebuster
@@ -255,9 +258,6 @@ func CheckCache(stat string, parameterList []string, headerList []string) (Cache
 				addCachebusterMap(totalCachebusters)
 			}
 		}
-	} else {
-		msg := "Time measurement as indicator is deactivated, skipping cachebuster tests\n"
-		Print(msg, Yellow)
 	}
 
 	if cache.Indicator == "" && !cache.TimeIndicator {
