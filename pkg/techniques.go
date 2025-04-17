@@ -23,12 +23,12 @@ func ScanCookies() reportResult {
 	repResult.Technique = "Cookies"
 	for i, c := range Config.Website.Cookies {
 
-		poison := randInt()
+		poison := "p" + randInt()
 		msg := fmt.Sprintf("Checking cookie %s (%d/%d)\n", c.Name, i+1, len(Config.Website.Cookies))
 		Print(msg, NoColor)
 
 		rUrl := Config.Website.Url.String()
-		cb := randInt()
+		cb := "cb" + randInt()
 		success := fmt.Sprintf("Cookie %s was successfully poisoned! cbwcvs: %s poison: %s\n", c.Name, cb, poison)
 		identifier := c.Name + "=" + c.Value
 		msg = fmt.Sprintf("Overwriting %s=%s with %s=%s\n", c.Name, c.Value, c.Name, poison)
@@ -62,7 +62,7 @@ func ScanCookies() reportResult {
 
 			rp.poison += getRespSplit()
 			rp.url = rUrl
-			rp.cb = randInt()
+			rp.cb = "cb" + randInt()
 			rp.success = fmt.Sprintf("Cookie %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", c.Name, responseSplittingHeader, rp.cb, rp.poison)
 			rp.identifier += " response splitting"
 
@@ -97,7 +97,7 @@ func ScanForwardingHeaders() reportResult {
 
 	// Duplicate Host header
 	header = "host"
-	poison := randInt()
+	poison := "p" + randInt()
 	values = []string{poison}
 	for _, value := range values {
 		ForwardHeadersTemplate(&repResult, []string{header}, []string{value}, header, value, true)
@@ -105,14 +105,14 @@ func ScanForwardingHeaders() reportResult {
 
 	// X-Forwarded Headers
 	headers := []string{"X-Forwarded-Host", "X-Forwarded-Scheme"}
-	poison = randInt()
+	poison = "p" + randInt()
 	values = []string{poison, "nothttps"}
 	identifier := "X-Forwarded-Host and X-Forwarded-Scheme"
 	ForwardHeadersTemplate(&repResult, headers, values, identifier, poison, false)
 
 	// Forwarded Header
 	header = "Forwarded"
-	value := "host=" + randInt()
+	value := "host=" + "p" + randInt()
 	ForwardHeadersTemplate(&repResult, []string{header}, []string{value}, header, value, false)
 
 	// X-Forwarded-Port Header
@@ -125,7 +125,7 @@ func ScanForwardingHeaders() reportResult {
 
 func ForwardHeadersTemplate(repResult *reportResult, headers []string, values []string, identifier string, poison string, duplicateHeaders bool) {
 	rUrl := Config.Website.Url.String()
-	cb := randInt()
+	cb := "cb" + randInt()
 	success := fmt.Sprintf("%s was successfully poisoned! cbwcvs: %s poison: %s\n", headers, cb, values)
 
 	rp := requestParams{
@@ -153,7 +153,7 @@ func ForwardHeadersTemplate(repResult *reportResult, headers []string, values []
 
 		rp.poison += getRespSplit()
 		rp.url = rUrl
-		rp.cb = randInt()
+		rp.cb = "cb" + randInt()
 		rp.success = fmt.Sprintf("%s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", headers, responseSplittingHeader, rp.cb, rp.values)
 		rp.identifier += " response splitting"
 
@@ -238,8 +238,8 @@ func ScanHeaders(headerList []string) reportResult {
 			msg := fmt.Sprintf("Testing now (%d/%d) %s\n", i+1, len(headerList), header)
 			PrintVerbose(msg, NoColor, 2)
 			rUrl := Config.Website.Url.String()
-			poison := randInt()
-			cb := randInt()
+			poison := "p" + randInt()
+			cb := "cb" + randInt()
 			success := fmt.Sprintf("Header %s was successfully poisoned! cbwcvs: %s poison: %s\n", header, cb, poison)
 			identifier := fmt.Sprintf("header %s", header)
 
@@ -267,7 +267,7 @@ func ScanHeaders(headerList []string) reportResult {
 				PrintVerbose(msg, Cyan, 1)
 
 				rp.url = rUrl
-				rp.cb = randInt()
+				rp.cb = "cb" + randInt()
 				rp.poison += getRespSplit()
 				rp.success = fmt.Sprintf("Header %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", header, responseSplittingHeader, rp.cb, rp.poison)
 				rp.identifier += " response splitting"
@@ -318,7 +318,7 @@ func ScanHeaders(headerList []string) reportResult {
 			}
 		}
 
-		poison := randInt()
+		poison := "p" + randInt()
 
 		msg := fmt.Sprintf("Testing now (%d/%d) %s\n", i+ii+1, len(headerList), headers)
 		PrintVerbose(msg, NoColor, 2)
@@ -340,7 +340,7 @@ func ScanHeaders(headerList []string) reportResult {
 		}
 
 		for ii, header := range headers {
-			poison = randInt()
+			poison = "p" + randInt()
 
 			go func(i int, header string, poison string) {
 				defer wg.Done()
@@ -464,8 +464,8 @@ func ScanParameters(parameterList []string) reportResult {
 			PrintVerbose(msg, NoColor, 2)
 
 			rUrl := Config.Website.Url.String()
-			poison := randInt()
-			cb := randInt()
+			poison := "p" + randInt()
+			cb := "cb" + randInt()
 			success := fmt.Sprintf("Query Parameter %s was successfully poisoned! cbwcvs: %s poison: %s\n", parameter, cb, poison)
 			identifier := fmt.Sprintf("parameter %s", parameter)
 
@@ -503,7 +503,7 @@ func ScanParameters(parameterList []string) reportResult {
 				rp.poison += getRespSplit()
 				rp.parameters = []string{parameter + "=" + rp.poison}
 				rp.url = rUrl
-				rp.cb = randInt()
+				rp.cb = "cb" + randInt()
 				rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", parameter, responseSplittingHeader, rp.cb, rp.poison)
 				rp.identifier += " response splitting"
 				issueRequest(rp)
@@ -568,7 +568,7 @@ func ScanFatGET() reportResult {
 				wg.Done()
 				continue
 			}
-			poison := randInt()
+			poison := "p" + randInt()
 
 			go func(i int, s string, poison string) {
 				defer wg.Done()
@@ -578,7 +578,7 @@ func ScanFatGET() reportResult {
 				msg := fmt.Sprintf("(%d/%d) %s\n", i+1, len(impactfulQueries), s)
 				PrintVerbose(msg, NoColor, 2)
 				rUrl := Config.Website.Url.String()
-				cb := randInt()
+				cb := "cb" + randInt()
 				bodyString := s + "=" + poison
 				success := fmt.Sprintf("Query Parameter %s was successfully poisoned via %s! cbwcvs: %s poison:%s\n", s, identifier, cb, poison)
 
@@ -605,7 +605,7 @@ func ScanFatGET() reportResult {
 					PrintVerbose(msg, Cyan, 1)
 
 					rp.url = rUrl
-					rp.cb = randInt()
+					rp.cb = "cb" + randInt()
 					rp.poison += getRespSplit()
 					rp.bodyString += getRespSplit()
 					rp.identifier += " response splitting"
@@ -652,7 +652,7 @@ func ScanParameterCloaking() reportResult {
 	// The first request is made so a cache miss is forced and the following responses will only
 	//have a cache hit, if they are unkeyed
 	rUrl := Config.Website.Url.String()
-	cb := randInt()
+	cb := "cb" + randInt()
 	rp := requestParams{
 		identifier: "first request %s",
 		url:        rUrl,
@@ -749,7 +749,7 @@ func ScanParameterCloaking() reportResult {
 				continue
 			}
 
-			poison := randInt()
+			poison := "p" + randInt()
 			prependCB := false // shall be true for the second test of the cachebuster
 
 			go func(iu int, u string, is int, s string, poison string, prependCB bool) {
@@ -759,7 +759,7 @@ func ScanParameterCloaking() reportResult {
 
 				msg := fmt.Sprintf("Testing now Parameter Cloaking (%d/%d) %s%s%s\n", iu+is+1, len(impactfulQueries)*len(unkeyed_parameters), u, cloak, s)
 				PrintVerbose(msg, NoColor, 2)
-				cb := randInt()
+				cb := "cb" + randInt()
 				success := fmt.Sprintf("Query Parameter %s was successfully poisoned via Parameter Cloaking using %s! cbwcvs:%s poison:%s\n", s, u, cb, poison)
 				identifier := fmt.Sprintf("parameter cloaking %s %s", u, s)
 
@@ -788,7 +788,7 @@ func ScanParameterCloaking() reportResult {
 					PrintVerbose(msg, Cyan, 1)
 
 					rp.url = rUrl
-					rp.cb = randInt()
+					rp.cb = "cb" + randInt()
 					rp.poison += getRespSplit()
 					rp.parameters = []string{u + "=foobar" + cloak + s + "=" + rp.poison}
 					rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting using %s with Parameter Cloaking! cbwcvs:%s poison:%s\n", s, responseSplittingHeader, u, rp.cb, rp.poison)
@@ -845,7 +845,7 @@ func ScanParameterPollution() reportResult {
 	wg.Add(len(impactfulQueries))
 
 	for is, s := range impactfulQueries {
-		poison := randInt()
+		poison := "p" + randInt()
 		prependCB := false // shall be true for the second test of the cachebuster
 
 		go func(is int, s string, poison string, secondHalf bool) {
@@ -867,7 +867,7 @@ func ScanParameterPollution() reportResult {
 
 			msg := fmt.Sprintf("Testing now Parameter Pollution (%d/%d) %s\n", is+1, len(impactfulQueries)*2, s)
 			PrintVerbose(msg, NoColor, 2)
-			cb := randInt()
+			cb := "cb" + randInt()
 			success := fmt.Sprintf("Query Parameter %s was successfully poisoned via Parameter Pollution! cbwcvs:%s poison:%s\n", s, cb, poison)
 			identifier := fmt.Sprintf("parameter Pollution %s", s)
 
@@ -897,7 +897,7 @@ func ScanParameterPollution() reportResult {
 				PrintVerbose(msg, Cyan, 1)
 
 				rp.url = url
-				rp.cb = randInt()
+				rp.cb = "cb" + randInt()
 				rp.poison += getRespSplit()
 
 				if is >= len(impactfulQueries) {
@@ -1028,7 +1028,7 @@ func hho(repResult *reportResult) {
 			}
 
 			rUrl := Config.Website.Url.String()
-			cb := randInt()
+			cb := "cb" + randInt()
 			identifier := fmt.Sprintf("HHO with limit of %dk bytes", limit)
 			rp := requestParams{
 				headers:    headers,
@@ -1094,7 +1094,7 @@ func headerDOSTemplate(repResult *reportResult, values []string, header string, 
 			msg := fmt.Sprintf("Testing now %s Header DOS with %s\n", header, value)
 			PrintVerbose(msg, NoColor, 2)
 			rUrl := Config.Website.Url.String()
-			cb := randInt()
+			cb := "cb" + randInt()
 			success := fmt.Sprintf("%sDOS with header %s was successfully poisoned! cbwcvs: %s poison: %s\n", msgextra, header, cb, value)
 			identifier := fmt.Sprintf("%s%s with %s", msgextra, header, value)
 
@@ -1122,7 +1122,7 @@ func headerDOSTemplate(repResult *reportResult, values []string, header string, 
 
 				rp.values[0] += getRespSplit()
 				rp.url = rUrl
-				rp.cb = randInt()
+				rp.cb = "cb" + randInt()
 				rp.success = fmt.Sprintf("%sDOS with header %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", msgextra, header, responseSplittingHeader, rp.cb, rp.values[0])
 				rp.identifier += getRespSplit() + " with response splitting"
 
@@ -1212,7 +1212,7 @@ func ScanCSS() reportResult {
 			rp := requestParams{
 				identifier: identifier,
 				url:        urlWithCb,
-				cb:         randInt(),
+				cb:         "cb" + randInt(),
 			}
 			body, _, request, _, err := firstRequest(rp)
 			if err != nil {

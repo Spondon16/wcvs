@@ -396,7 +396,7 @@ func cachebusterCookie(cache *CacheStruct) []error {
 				}
 
 				if ii%2 == 0 {
-					cb = randInt()
+					cb = "cb" + randInt()
 					newCookie = *c
 					newCookie.Value = cb
 				}
@@ -466,7 +466,7 @@ func cachebusterCookie(cache *CacheStruct) []error {
 				continue
 			}
 
-			cb := randInt()
+			cb := "cb" + randInt()
 			newCookie := *c
 			newCookie.Value = cb
 			setRequest(req, Config.DoPost, "", newCookie, false)
@@ -513,7 +513,7 @@ func cachebusterCookie(cache *CacheStruct) []error {
 					continue
 				}
 
-				cb = randInt()
+				cb = "cb" + randInt()
 				c.Value = cb
 				setRequest(req, Config.DoPost, "", *c, false)
 
@@ -624,7 +624,7 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 
 				setRequest(req, Config.DoPost, "", http.Cookie{}, false)
 				if ii%2 == 0 {
-					cbvalue := values[i] + randInt()
+					cbvalue := values[i] + "cb" + randInt()
 					if h := req.Header.Get(header); h != "" {
 						msg := fmt.Sprintf("Overwriting %s:%s with %s:%s\n", header, h, header, cbvalue)
 						Print(msg, NoColor)
@@ -698,7 +698,7 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 			}
 
 			setRequest(req, Config.DoPost, "", http.Cookie{}, false)
-			cbvalue := values[i] + randInt()
+			cbvalue := values[i] + "cb" + randInt()
 			if h := req.Header.Get(header); h != "" {
 				msg := fmt.Sprintf("Overwriting %s:%s with %s:%s\n", header, h, header, cbvalue)
 				Print(msg, NoColor)
@@ -746,7 +746,7 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 				}
 
 				setRequest(req, Config.DoPost, "", http.Cookie{}, false)
-				cbvalue := values[i] + randInt()
+				cbvalue := values[i] + "cb" + randInt()
 				if h := req.Header.Get(header); h != "" {
 					msg := fmt.Sprintf("Overwriting %s:%s with %s:%s\n", header, h, header, cbvalue)
 					Print(msg, NoColor)
@@ -1276,7 +1276,7 @@ func GetWebsite(requrl string, setStatusCode bool, cacheBuster bool) (WebsiteStr
 
 	cb := ""
 	if cacheBuster {
-		cb = randInt()
+		cb = "cb" + randInt()
 	}
 
 	var req *http.Request

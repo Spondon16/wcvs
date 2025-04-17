@@ -162,7 +162,7 @@ func setRequestCookies(req *http.Request, cb string, cookie http.Cookie) {
 
 func addCachebusterParameter(strUrl string, cbvalue string, cb string, prepend bool) (string, string) {
 	if cbvalue == "" {
-		cbvalue = randInt()
+		cbvalue = "cb" + randInt()
 	}
 	if cb == "" {
 		cb = Config.Website.Cache.CBName

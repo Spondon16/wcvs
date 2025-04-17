@@ -28,7 +28,7 @@ func GenerateHeaderString() string {
 		}
 		valToAdd := c.Value
 		if cache.CBisCookie && c.Name == cache.CBName {
-			valToAdd = randInt()
+			valToAdd = "cb" + randInt()
 		}
 		headers += c.Name + "=" + valToAdd
 	}
@@ -39,7 +39,7 @@ func GenerateHeaderString() string {
 
 	headerSlice := Config.Headers
 	if cache.CBisHeader {
-		headerSlice = append(headerSlice, cache.CBName+": "+randInt())
+		headerSlice = append(headerSlice, cache.CBName+": cb"+randInt())
 	}
 
 	for i, h := range headerSlice {
