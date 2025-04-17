@@ -49,6 +49,7 @@ type (
 		GenerateReport    bool
 		EscapeJSON        bool
 		GenerateCompleted bool
+		NoLog             bool
 
 		ProxyCertPath string
 		ProxyURL      string

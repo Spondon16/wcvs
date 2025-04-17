@@ -90,6 +90,8 @@ func ParseFlags(vers string) {
 		"escapejson", "ej", false, "Do you want HTML special chars to be encoded in the report?")
 	appendBoolean(&generateOptions, &Config.GenerateCompleted,
 		"generatecompleted", "gc", false, "Do you want a list with completed URLs to be generated?")
+	appendBoolean(&generateOptions, &Config.NoLog,
+		"nolog", "nl", false, "Do you want no log file to be created?")
 
 	// Request Options
 	var (
@@ -171,7 +173,7 @@ func ParseFlags(vers string) {
 
 	// Change User Agent
 	if userAgentChrome {
-		useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36"
+		useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
 	}
 
 	// IgnoreStatus string to int slice

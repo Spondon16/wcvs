@@ -26,21 +26,27 @@ func PrintNewLine() {
 	Print("\n", NoColor)
 }
 
+func PrintLog(msg string) {
+	if !Config.NoLog {
+		log.Print(msg)
+	}
+}
+
 func PrintVerbose(msg string, c int, threshold int) {
 	if c == Red {
-		log.Print("[ERR] " + msg)
+		PrintLog("[ERR] " + msg)
 		msg = color.RedString("[ERR] ") + msg
 	} else if c == Yellow {
+		PrintLog("[!] " + msg)
 		msg = color.YellowString("[!] ") + msg
-		log.Print("[!] " + msg)
 	} else if c == Green {
+		PrintLog("[+] " + msg)
 		msg = color.GreenString("[+] ") + msg
-		log.Print("[+] " + msg)
 	} else if c == Cyan {
+		PrintLog("[*] " + msg)
 		msg = color.CyanString("[*] ") + msg
-		log.Print("[*] " + msg)
 	} else {
-		log.Print(msg)
+		PrintLog(msg)
 	}
 
 	if Config.Verbosity >= threshold {
