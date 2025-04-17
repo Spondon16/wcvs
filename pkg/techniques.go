@@ -29,7 +29,7 @@ func ScanCookies() reportResult {
 
 		rUrl := Config.Website.Url.String()
 		cb := "cb" + randInt()
-		success := fmt.Sprintf("Cookie %s was successfully poisoned! cbwcvs: %s poison: %s\n", c.Name, cb, poison)
+		success := fmt.Sprintf("Cookie %s was successfully poisoned! cachebuster %s: %s poison: %s\n", c.Name, Config.Website.Cache.CBName, cb, poison)
 		identifier := c.Name + "=" + c.Value
 		msg = fmt.Sprintf("Overwriting %s=%s with %s=%s\n", c.Name, c.Value, c.Name, poison)
 		Print(msg, NoColor)
@@ -63,7 +63,7 @@ func ScanCookies() reportResult {
 			rp.poison += getRespSplit()
 			rp.url = rUrl
 			rp.cb = "cb" + randInt()
-			rp.success = fmt.Sprintf("Cookie %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", c.Name, responseSplittingHeader, rp.cb, rp.poison)
+			rp.success = fmt.Sprintf("Cookie %s successfully poisoned the header %s with Response Splitting! cachebuster %s: %s poison: %s\n", c.Name, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.poison)
 			rp.identifier += " response splitting"
 
 			msg = fmt.Sprintf("Overwriting %s=%s with %s=%s\n", c.Name, c.Value, c.Name, rp.poison)
@@ -126,7 +126,7 @@ func ScanForwardingHeaders() reportResult {
 func ForwardHeadersTemplate(repResult *reportResult, headers []string, values []string, identifier string, poison string, duplicateHeaders bool) {
 	rUrl := Config.Website.Url.String()
 	cb := "cb" + randInt()
-	success := fmt.Sprintf("%s was successfully poisoned! cbwcvs: %s poison: %s\n", headers, cb, values)
+	success := fmt.Sprintf("%s was successfully poisoned! cachebuster %s: %s poison: %s\n", headers, Config.Website.Cache.CBName, cb, values)
 
 	rp := requestParams{
 		repResult:        repResult,
@@ -154,7 +154,7 @@ func ForwardHeadersTemplate(repResult *reportResult, headers []string, values []
 		rp.poison += getRespSplit()
 		rp.url = rUrl
 		rp.cb = "cb" + randInt()
-		rp.success = fmt.Sprintf("%s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", headers, responseSplittingHeader, rp.cb, rp.values)
+		rp.success = fmt.Sprintf("%s successfully poisoned the header %s with Response Splitting! cachebuster %s: %s poison: %s\n", headers, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.values)
 		rp.identifier += " response splitting"
 
 		issueRequest(rp)
@@ -240,7 +240,7 @@ func ScanHeaders(headerList []string) reportResult {
 			rUrl := Config.Website.Url.String()
 			poison := "p" + randInt()
 			cb := "cb" + randInt()
-			success := fmt.Sprintf("Header %s was successfully poisoned! cbwcvs: %s poison: %s\n", header, cb, poison)
+			success := fmt.Sprintf("Header %s was successfully poisoned! cachebuster %s: %s poison: %s\n", header, Config.Website.Cache.CBName, cb, poison)
 			identifier := fmt.Sprintf("header %s", header)
 
 			rp := requestParams{
@@ -269,7 +269,7 @@ func ScanHeaders(headerList []string) reportResult {
 				rp.url = rUrl
 				rp.cb = "cb" + randInt()
 				rp.poison += getRespSplit()
-				rp.success = fmt.Sprintf("Header %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", header, responseSplittingHeader, rp.cb, rp.poison)
+				rp.success = fmt.Sprintf("Header %s successfully poisoned the header %s with Response Splitting! cachebuster %s: %s poison: %s\n", header, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.poison)
 				rp.identifier += " response splitting"
 
 				issueRequest(rp)
@@ -281,150 +281,6 @@ func ScanHeaders(headerList []string) reportResult {
 
 	return repResult
 }
-
-/* Scan headers for poisoning. Test 10x aufeinmal */ /*
-func ScanHeaders(headerList []string) reportResult {
-	var repResult reportResult
-	repResult.Technique = "Headers"
-
-	threads := Config.Threads
-	if Config.Website.Cache.CBisHTTPMethod {
-		threads = 1 // No multithreading if HTTP Method is used... Otherwise there will be a lot of false negatives/positives
-		PrintVerbose("Can only scan single threaded because a HTTP Method is used as Cachebuster...\n", Yellow, 1)
-	}
-	sem := make(chan int, threads)
-	var wg sync.WaitGroup
-	wg.Add(len(headerList))
-	var m sync.Mutex
-
-	// add 10 headers at a time to check if the response differs
-	for i := 0; i < len(headerList); i += 10 {
-		var headers = []string{}
-		for ii := 0; i < 10; i++ {
-			if len(headerList) > i+ii {
-				defer wg.Done()
-
-				headerToAdd := strings.Trim(headerList[i+ii], "\r")
-				if headerToAdd == "" {
-					msg := fmt.Sprintf("Skipping empty header (%d/%d)\n", i+1, len(headerList))
-					PrintVerbose(msg, NoColor, 1)
-
-					wg.Done()
-					continue
-				} else {
-					headerToAdd = http.CanonicalHeaderKey(headerToAdd)
-					headers = append(headers, headerToAdd)
-				}
-			}
-		}
-
-		poison := "p" + randInt()
-
-		msg := fmt.Sprintf("Testing now (%d/%d) %s\n", i+ii+1, len(headerList), headers)
-		PrintVerbose(msg, NoColor, 2)
-		urlWithCb, _ := addCacheBuster(Config.Website.Url.String(), "", Config.CacheBuster)
-
-		identifier := fmt.Sprintf("headers %s", headers)
-
-		rp := requestParams{
-			headers:    headers,
-			values:     []string{poison},
-			identifier: identifier,
-			poison:     poison,
-			url:        urlWithCb,
-		}
-		respBody, respCode, _, respHeaders, err := firstRequest(rp)
-		// TODO repeat when timedout
-		if err != nil {
-			continue
-		}
-
-		for ii, header := range headers {
-			poison = "p" + randInt()
-
-			go func(i int, header string, poison string) {
-				defer wg.Done()
-				sem <- 1
-				defer func() { <-sem }() // Freigabe der Semaphore, egal was passiert. Dadurch werden Deadlocks verhindert
-
-				msg := fmt.Sprintf("Testing now (%d/%d) %s\n", i+1, len(headerList), header)
-				PrintVerbose(msg, NoColor, 2)
-				urlWithCb, cb := addCacheBuster(Config.Website.Url.String(), "", Config.CacheBuster)
-				success := fmt.Sprintf("Header %s was successfully poisoned! cbwcvs: %s poison: %s\n", header, cb, poison)
-				identifier := fmt.Sprintf("header %s", header)
-
-				rp := requestParams{
-					repResult:        &repResult,
-					headers:          []string{header},
-					values:           []string{poison},
-					identifier:       identifier,
-					poison:           poison,
-					url:              urlWithCb,
-					cbwcvs:               cb,
-					success:          success,
-					bodyString:       "",
-					forcePost:        false,
-					duplicateHeaders: false,
-					m:                &m,
-					cookie:           oldCookie{},
-				}
-				responseSplitting, _ := issueRequest(rp)
-
-				// check for response splitting, if poison was reflected in a header
-				if responseSplitting {
-					msg := fmt.Sprintf("Testing now (%d/%d) %s for Response Splitting, because it was reflected in the response' header\n", i+1, len(headerList), header)
-					PrintVerbose(msg, Cyan, 1)
-
-					rp.url, rp.cb = addCacheBuster(Config.Website.Url.String(), "", Config.CacheBuster)
-					rp.poison += getRespSplit()
-					rp.success = fmt.Sprintf("Header %s was successfully poisoned with Response Splitting! cbwcvs: %s poison: %s\n", header, rp.cb, rp.poison)
-					rp.identifier += " response splitting"
-
-					issueRequest(rp)
-				}
-			}(i+ii, header, poison)
-		}
-
-	}
-	wg.Wait()
-
-	return repResult
-}*/
-
-/*
-func addCbWithPoison(parameter string, poison string) (string, string) {
-	var urlWithCb, cb string
-	if _, ok := Config.Website.Queries[parameter]; ok {
-		// if the query to add is already present
-		queryParameterMap := make(map[string]string)
-
-		for key, val := range Config.Website.Queries {
-			queryParameterMap[key] = val
-		}
-
-		msg := fmt.Sprintf("Overwriting %s=%s with %s=%s\n", parameter, queryParameterMap[parameter], parameter, poison)
-		Print(msg, NoColor)
-		queryParameterMap[parameter] = poison
-
-		urlWithCb = Config.Website.UrlWOQueries + "?"
-		for key, val := range queryParameterMap {
-			if !strings.HasSuffix(urlWithCb, "?") {
-				urlWithCb += "&"
-			}
-			urlWithCb += key + "=" + val
-		}
-
-		urlWithCb, cb = AddCacheBuster(urlWithCb+Config.QuerySeperator, "", Config.CacheBuster)
-	} else {
-		// if query isn't already present, just add it and the cachebuster
-		urlWithCb = Config.Website.Url.String()
-		urlWithCb += parameter + "=" + poison + Config.QuerySeperator
-		urlWithCb, cb = AddCacheBuster(urlWithCb, "", Config.CacheBuster)
-	}
-
-	return urlWithCb, cb
-}
-*/
 
 /* Scan query parameters for poisoning */
 func ScanParameters(parameterList []string) reportResult {
@@ -466,7 +322,7 @@ func ScanParameters(parameterList []string) reportResult {
 			rUrl := Config.Website.Url.String()
 			poison := "p" + randInt()
 			cb := "cb" + randInt()
-			success := fmt.Sprintf("Query Parameter %s was successfully poisoned! cbwcvs: %s poison: %s\n", parameter, cb, poison)
+			success := fmt.Sprintf("Query Parameter %s was successfully poisoned! cachebuster %s: %s poison: %s\n", parameter, Config.Website.Cache.CBName, cb, poison)
 			identifier := fmt.Sprintf("parameter %s", parameter)
 
 			if strings.Contains(strings.ToLower(rUrl), "?"+parameter+"=") || strings.Contains(strings.ToLower(rUrl), "&"+parameter+"=") { // remove param if it already existed, so that it will be set only one time and that being with the poison value
@@ -504,7 +360,7 @@ func ScanParameters(parameterList []string) reportResult {
 				rp.parameters = []string{parameter + "=" + rp.poison}
 				rp.url = rUrl
 				rp.cb = "cb" + randInt()
-				rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", parameter, responseSplittingHeader, rp.cb, rp.poison)
+				rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting! cachebuster %s: %s poison: %s\n", parameter, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.poison)
 				rp.identifier += " response splitting"
 				issueRequest(rp)
 			}
@@ -580,7 +436,7 @@ func ScanFatGET() reportResult {
 				rUrl := Config.Website.Url.String()
 				cb := "cb" + randInt()
 				bodyString := s + "=" + poison
-				success := fmt.Sprintf("Query Parameter %s was successfully poisoned via %s! cbwcvs: %s poison:%s\n", s, identifier, cb, poison)
+				success := fmt.Sprintf("Query Parameter %s was successfully poisoned via %s! cachebuster %s: %s poison:%s\n", s, identifier, Config.Website.Cache.CBName, cb, poison)
 
 				rp := requestParams{
 					repResult:        &repResult,
@@ -609,7 +465,7 @@ func ScanFatGET() reportResult {
 					rp.poison += getRespSplit()
 					rp.bodyString += getRespSplit()
 					rp.identifier += " response splitting"
-					rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s via %s with Response Splitting! cbwcvs: %s poison:%s\n", s, responseSplittingHeader, identifier, rp.cb, rp.poison)
+					rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s via %s with Response Splitting! cachebuster %s: %s poison:%s\n", s, responseSplittingHeader, identifier, Config.Website.Cache.CBName, rp.cb, rp.poison)
 
 					issueRequest(rp)
 				}
@@ -762,7 +618,7 @@ func ScanParameterCloaking() reportResult {
 				msg := fmt.Sprintf("Testing now Parameter Cloaking (%d/%d) %s%s%s\n", iu+is+1, len(impactfulQueries)*len(unkeyed_parameters), u, cloak, s)
 				PrintVerbose(msg, NoColor, 2)
 				cb := "cb" + randInt()
-				success := fmt.Sprintf("Query Parameter %s was successfully poisoned via Parameter Cloaking using %s! cbwcvs:%s poison:%s\n", s, u, cb, poison)
+				success := fmt.Sprintf("Query Parameter %s was successfully poisoned via Parameter Cloaking using %s! cachebuster %s:%s poison:%s\n", s, u, Config.Website.Cache.CBName, cb, poison)
 				identifier := fmt.Sprintf("parameter cloaking %s %s", u, s)
 
 				prependCB := false
@@ -803,7 +659,7 @@ func ScanParameterCloaking() reportResult {
 					rp.cb = "cb" + randInt()
 					rp.poison += getRespSplit()
 					rp.parameters = []string{u + "=foobar" + cloak + s + "=" + rp.poison}
-					rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting using %s with Parameter Cloaking! cbwcvs:%s poison:%s\n", s, responseSplittingHeader, u, rp.cb, rp.poison)
+					rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting using %s with Parameter Cloaking! cachebuster %s:%s poison:%s\n", s, responseSplittingHeader, u, Config.Website.Cache.CBName, rp.cb, rp.poison)
 					rp.identifier += " response splitting"
 
 					issueRequest(rp)
@@ -876,7 +732,7 @@ func ScanParameterPollution() reportResult {
 			msg := fmt.Sprintf("Testing now Parameter Pollution (%d/%d) %s\n", is+1, len(impactfulQueries)*2, s)
 			PrintVerbose(msg, NoColor, 2)
 			cb := "cb" + randInt()
-			success := fmt.Sprintf("Query Parameter %s was successfully poisoned via Parameter Pollution! cbwcvs:%s poison:%s\n", s, cb, poison)
+			success := fmt.Sprintf("Query Parameter %s was successfully poisoned via Parameter Pollution! cachebuster %s:%s poison:%s\n", s, Config.Website.Cache.CBName, cb, poison)
 			identifier := fmt.Sprintf("parameter Pollution %s", s)
 
 			rp := requestParams{
@@ -915,7 +771,7 @@ func ScanParameterPollution() reportResult {
 				}
 
 				rp.parameters = parameters
-				rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting with Parameter Pollution! cbwcvs:%s poison:%s\n", s, responseSplittingHeader, rp.cb, rp.poison)
+				rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting with Parameter Pollution! cachebuster %s:%s poison:%s\n", s, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.poison)
 				rp.identifier += " response splitting"
 
 				issueRequest(rp)
@@ -1068,7 +924,7 @@ func hho(repResult *reportResult) {
 				return
 			}
 
-			msg = fmt.Sprintf("HHO DOS was successfully poisoned! cbwcvs: %s \n%s\n", cb, request.URL)
+			msg = fmt.Sprintf("HHO DOS was successfully poisoned! cachebuster %s: %s \n%s\n", Config.Website.Cache.CBName, cb, request.URL)
 			m.Lock()
 			_ = checkPoisoningIndicators(repResult, request, msg, "", "", statusCode1, statusCode2, false, respHeader, false)
 			m.Unlock()
@@ -1103,7 +959,7 @@ func headerDOSTemplate(repResult *reportResult, values []string, header string, 
 			PrintVerbose(msg, NoColor, 2)
 			rUrl := Config.Website.Url.String()
 			cb := "cb" + randInt()
-			success := fmt.Sprintf("%sDOS with header %s was successfully poisoned! cbwcvs: %s poison: %s\n", msgextra, header, cb, value)
+			success := fmt.Sprintf("%sDOS with header %s was successfully poisoned! cachebuster %s: %s poison: %s\n", msgextra, header, Config.Website.Cache.CBName, cb, value)
 			identifier := fmt.Sprintf("%s%s with %s", msgextra, header, value)
 
 			rp := requestParams{
@@ -1131,7 +987,7 @@ func headerDOSTemplate(repResult *reportResult, values []string, header string, 
 				rp.values[0] += getRespSplit()
 				rp.url = rUrl
 				rp.cb = "cb" + randInt()
-				rp.success = fmt.Sprintf("%sDOS with header %s successfully poisoned the header %s with Response Splitting! cbwcvs: %s poison: %s\n", msgextra, header, responseSplittingHeader, rp.cb, rp.values[0])
+				rp.success = fmt.Sprintf("%sDOS with header %s successfully poisoned the header %s with Response Splitting! cachebuster %s: %s poison: %s\n", msgextra, header, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.values[0])
 				rp.identifier += getRespSplit() + " with response splitting"
 
 				issueRequest(rp)
@@ -1251,7 +1107,7 @@ func ScanCSS() reportResult {
 
 			if strings.Contains(string(body), cb) {
 				PrintNewLine()
-				msg = fmt.Sprintf("A CSS file was successfully poisoned! cbwcvs: %s\nURL: %s\n", cb, request.URL)
+				msg = fmt.Sprintf("A CSS file was successfully poisoned! cachebuster %s: %s\nURL: %s\n", Config.Website.Cache.CBName, cb, request.URL)
 				Print(msg, Green)
 				msg = "Reason: CSS reflects URL\n"
 				Print(msg, Green)
