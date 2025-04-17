@@ -469,6 +469,10 @@ func ScanParameters(parameterList []string) reportResult {
 			success := fmt.Sprintf("Query Parameter %s was successfully poisoned! cbwcvs: %s poison: %s\n", parameter, cb, poison)
 			identifier := fmt.Sprintf("parameter %s", parameter)
 
+			if strings.Contains(strings.ToLower(rUrl), "?"+parameter+"=") || strings.Contains(strings.ToLower(rUrl), "&"+parameter+"=") { // remove param if it already existed, so that it will be set only one time and that being with the poison value
+				rUrl, _ = removeParam(rUrl, parameter)
+			}
+
 			rp := requestParams{
 				repResult:        &repResult,
 				headers:          []string{""},
@@ -855,7 +859,7 @@ func ScanParameterPollution() reportResult {
 			}
 
 			var parameters []string
-			if is >= len(impactfulQueries) {
+			if is >= len(impactfulQueries)/2 {
 				parameters = []string{s + "=" + poison, s + "=foobar"}
 			} else {
 				parameters = []string{s + "=foobar", s + "=" + poison}
@@ -908,7 +912,7 @@ func ScanParameterPollution() reportResult {
 
 				issueRequest(rp)
 			}
-		}(is, s, poison, is >= len(impactfulQueries))
+		}(is, s, poison, is >= len(impactfulQueries)/2)
 	}
 	wg.Wait()
 
