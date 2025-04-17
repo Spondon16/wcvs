@@ -872,6 +872,7 @@ func ScanParameterPollution() reportResult {
 				headers:          []string{""},
 				values:           []string{poison},
 				parameters:       parameters,
+				technique:        "pollution",
 				identifier:       identifier,
 				poison:           poison,
 				url:              url,
@@ -1044,7 +1045,7 @@ func hho(repResult *reportResult) {
 			}
 
 			// send second request also with cb
-			_, statusCode2, respHeader, err := secondRequest(rUrl, identifier, cb)
+			_, statusCode2, respHeader, err := secondRequest(rp)
 			if err != nil {
 				if err.Error() != "stop" {
 					m.Lock()
@@ -1225,7 +1226,7 @@ func ScanCSS() reportResult {
 				Print(msg, Green)
 			}
 
-			body, _, _, err = secondRequest(url, identifier, rp.cb)
+			body, _, _, err = secondRequest(rp)
 			if err != nil {
 				if err.Error() != "stop" {
 					m.Lock()

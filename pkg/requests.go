@@ -25,6 +25,7 @@ type requestParams struct {
 	values     []string
 	parameters []string
 	//cookie           oldCookie
+	technique        string
 	name             string
 	identifier       string
 	poison           string
@@ -354,12 +355,22 @@ func firstRequest(rp requestParams) ([]byte, int, reportRequest, http.Header, er
 	return body, resp.StatusCode, repRequest, resp.Header.Clone(), nil
 }
 
-func secondRequest(rUrl string, identifier string, cb string) ([]byte, int, http.Header, error) {
+func secondRequest(rpFirst requestParams) ([]byte, int, http.Header, error) {
+	var parameter []string
+	if rpFirst.technique == "pollution" {
+		for _, param := range rpFirst.parameters {
+			if strings.Contains(param, "=foobar") {
+				parameter = append(parameter, param)
+			}
+		}
+	}
+
 	rp := requestParams{
+		parameters: parameter,
 		values:     []string{"2ndrequest"},
-		identifier: identifier,
-		url:        rUrl,
-		cb:         cb,
+		identifier: rpFirst.identifier,
+		url:        rpFirst.url,
+		cb:         rpFirst.cb,
 	}
 
 	body, statusCode, _, header, err := firstRequest(rp)
@@ -386,7 +397,7 @@ func issueRequest(rp requestParams) (string, bool) {
 
 	impactful := firstRequestPoisoningIndicator(rp.identifier, body1, rp.poison, header1, Config.Website.Cache.CBName == rp.name, rp.cb) // TODO add different status code as indicator?
 
-	body2, statusCode2, respHeader, err := secondRequest(rp.url, rp.identifier, rp.cb)
+	body2, statusCode2, respHeader, err := secondRequest(rp)
 	if err != nil {
 		if err.Error() != "stop" {
 			if rp.m != nil {
