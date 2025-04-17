@@ -597,6 +597,10 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 			values = append(values, "")
 		}
 
+		if header == "" { // skip empty headers
+			continue
+		}
+
 		var req *http.Request
 		var err error
 		var times []int64
@@ -825,8 +829,13 @@ func cachebusterParameter(cache *CacheStruct, parameterList []string) []error {
 	for i, parameter := range parameters {
 		errorString := "cachebusterParameter"
 		identifier := "Parameter " + parameter + " as Cachebuster"
+
 		if len(values) < i+1 { // prevent index out of range
 			values = append(values, "")
+		}
+
+		if parameter == "" { // skip empty parameter
+			continue
 		}
 
 		var req *http.Request
