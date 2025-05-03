@@ -110,6 +110,9 @@ func ScanForwardingHeaders() reportResult {
 	identifier := "X-Forwarded-Host and X-Forwarded-Scheme"
 	ForwardHeadersTemplate(&repResult, headers, values, identifier, poison, false)
 
+	values = []string{poison, "https"}
+	ForwardHeadersTemplate(&repResult, headers, values, identifier, poison, false)
+
 	// Forwarded Header
 	header = "Forwarded"
 	value := "host=" + "p" + randInt()
@@ -119,6 +122,13 @@ func ScanForwardingHeaders() reportResult {
 	header = "X-Forwarded-Port"
 	value = port
 	ForwardHeadersTemplate(&repResult, []string{header}, []string{value}, header, value, false)
+
+	// X-Forwarded-Port Scheme
+	header = "X-Forwarded-Scheme"
+	values = []string{"http", "https"}
+	for _, value := range values {
+		ForwardHeadersTemplate(&repResult, []string{header}, []string{value}, header, value, false)
+	}
 
 	return repResult
 }
@@ -204,6 +214,7 @@ func ScanHTTPRequestSmuggling(proxyURL *url.URL) reportResult {
 func ScanHeaders(headerList []string) reportResult {
 	var repResult reportResult
 	repResult.Technique = "Headers"
+	headerList = append(Config.Headers, headerList...) // add custom headers to list
 
 	threads := Config.Threads
 	if Config.Website.Cache.CBisHTTPMethod {
@@ -287,6 +298,13 @@ func ScanParameters(parameterList []string) reportResult {
 	var repResult reportResult
 	repResult.Technique = "Parameters"
 
+	var parametersToTest []string
+
+	for k := range Config.Website.Queries {
+		parametersToTest = append(parametersToTest, k) // add custom parameters to list
+	}
+	parametersToTest = append(parametersToTest, parameterList...)
+
 	threads := Config.Threads
 	if Config.Website.Cache.CBisHTTPMethod {
 		threads = 1 // No multithreading if HTTP Method is used... Otherwise there will be a lot of false negatives/positives
@@ -294,17 +312,17 @@ func ScanParameters(parameterList []string) reportResult {
 	}
 	sem := make(chan int, threads)
 	var wg sync.WaitGroup
-	wg.Add(len(parameterList))
+	wg.Add(len(parametersToTest))
 	var m sync.Mutex
 
 	impactfulQueries = []string{}
 
-	msg := fmt.Sprintf("Testing %d parameters\n", len(parameterList))
+	msg := fmt.Sprintf("Testing %d parameters\n", len(parametersToTest))
 	PrintVerbose(msg, NoColor, 1)
 
-	for i, parameter := range parameterList {
+	for i, parameter := range parametersToTest {
 		if parameter == "" {
-			msg := fmt.Sprintf("Skipping empty query (%d/%d) %s\n", i+1, len(parameterList), parameter)
+			msg := fmt.Sprintf("Skipping empty query (%d/%d) %s\n", i+1, len(parametersToTest), parameter)
 			PrintVerbose(msg, NoColor, 2)
 			wg.Done()
 			continue
@@ -316,7 +334,7 @@ func ScanParameters(parameterList []string) reportResult {
 			defer func() { <-sem }() // Freigabe der Semaphore, egal was passiert. Dadurch werden Deadlocks verhindert
 
 			parameter = strings.Trim(parameter, "\r")
-			msg := fmt.Sprintf("Testing now Parameter (%d/%d) %s\n", i+1, len(parameterList), parameter)
+			msg := fmt.Sprintf("Testing now Parameter (%d/%d) %s\n", i+1, len(parametersToTest), parameter)
 			PrintVerbose(msg, NoColor, 2)
 
 			rUrl := Config.Website.Url.String()
@@ -353,7 +371,7 @@ func ScanParameters(parameterList []string) reportResult {
 			}
 			// check for response splitting, if poison was reflected in a header
 			if responseSplittingHeader != "" {
-				msg := fmt.Sprintf("Testing now Parameter (%d/%d) %s for Response Splitting, because it was reflected in the header %s\n", i+1, len(parameterList), parameter, responseSplittingHeader)
+				msg := fmt.Sprintf("Testing now Parameter (%d/%d) %s for Response Splitting, because it was reflected in the header %s\n", i+1, len(parametersToTest), parameter, responseSplittingHeader)
 				PrintVerbose(msg, Cyan, 1)
 
 				rp.poison += getRespSplit()
@@ -850,6 +868,10 @@ func DOS() reportResult {
 	// DOS via X-Fordwarded-SSL
 	values = []string{"on", "off", "nonsense"}
 	headerDOSTemplate(&repResult, values, "X-Forwarded-SSL", "", true)
+
+	// DOS via invalid Content-Type
+	values = []string{"m10x"}
+	headerDOSTemplate(&repResult, values, "Content-Type", "", true)
 
 	return repResult
 }
