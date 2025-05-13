@@ -214,7 +214,10 @@ func ScanHTTPRequestSmuggling(proxyURL *url.URL) reportResult {
 func ScanHeaders(headerList []string) reportResult {
 	var repResult reportResult
 	repResult.Technique = "Headers"
-	headerList = append(Config.Headers, headerList...) // add custom headers to list
+	for _, header := range Config.Headers { // add custom headers to list
+		headerVal := strings.Split(header, ":")[0]
+		headerList = append(Config.Headers, headerVal)
+	}
 
 	threads := Config.Threads
 	if Config.Website.Cache.CBisHTTPMethod {
