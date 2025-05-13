@@ -66,7 +66,7 @@ func checkPoisoningIndicators(repResult *reportResult, request reportRequest, su
 	}
 
 	if request.Reason == "" {
-		if poison != "" && strings.Contains(body, poison) {
+		if poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && strings.Contains(body, poison) { // dont check for reflection of http/https/nothttps (used by forwarded headers) or empty poison
 			request.Reason = "Response Body contained " + poison
 		} else if headerWithPoison != "" {
 			request.Reason = fmt.Sprintf("%s header contains poison value %s", headerWithPoison, poison)
@@ -424,7 +424,7 @@ func issueRequest(rp requestParams) (string, bool) {
 
 func firstRequestPoisoningIndicator(identifier string, body []byte, poison string, header http.Header, identifierIsCB bool, cb string) bool {
 	var reason string
-	if poison != "" {
+	if poison != "" && poison != "http" && poison != "https" && poison != "nothttps" { // dont check for reflection of http/https/nothttps (used by forwarded headers) or empty poison
 		if strings.Contains(string(body), poison) || (identifierIsCB && strings.Contains(string(body), cb)) { //
 			reason = "Response Body contained " + poison
 		}
