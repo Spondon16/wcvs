@@ -1,5 +1,5 @@
 #!/bin/bash
-version=1.3.3
+version=1.4.2
 
 # Windows amd64
 goos=windows
