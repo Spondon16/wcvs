@@ -219,7 +219,7 @@ func ScanHeaders(headerList []string) reportResult {
 	repResult.Technique = "Headers"
 	for _, header := range Config.Headers { // add custom headers to list
 		headerVal := strings.Split(header, ":")[0]
-		headerList = append(Config.Headers, headerVal)
+		headerList = append(headerList, headerVal)
 	}
 
 	threads := Config.Threads
@@ -239,7 +239,7 @@ func ScanHeaders(headerList []string) reportResult {
 		header = strings.Trim(header, "\r")
 		if header == "" {
 			msg := fmt.Sprintf("Skipping empty header (%d/%d)\n", i+1, len(headerList))
-			PrintVerbose(msg, NoColor, 1)
+			PrintVerbose(msg, NoColor, 2)
 
 			wg.Done()
 			continue
