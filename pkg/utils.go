@@ -270,13 +270,3 @@ func checkCacheHit(value string, indicator string) bool {
 	}
 	return false
 }
-
-/* Check if slice contains value */
-func sliceContains(slice []string, value string) bool {
-	for _, v := range slice {
-		if v == value {
-			return true
-		}
-	}
-	return false
-}
