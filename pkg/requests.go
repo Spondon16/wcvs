@@ -55,7 +55,7 @@ func getRespSplit() string {
 
 func checkPoisoningIndicators(repResult *reportResult, request reportRequest, success string, body string, poison string, statusCode1 int, statusCode2 int, sameBodyLength bool, header http.Header, recursive bool) string {
 	headerWithPoison := ""
-	if header != nil && poison != "" {
+	if header != nil && poison != "" && poison != "http" && poison != "https" && poison != "nothttps" { // dont check for reflection of http/https/nothttps (used by forwarded headers) or empty poison
 		for x := range header {
 			if x == respSplitHeader && header.Get(x) == respSplitValue {
 				request.Reason = "HTTP Response Splitting"
