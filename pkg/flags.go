@@ -3,8 +3,11 @@ package pkg
 import (
 	"flag"
 	"fmt"
+	"log"
+	"net/url"
 	"os"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -193,11 +196,21 @@ func ParseFlags(vers string) {
 		Config.RecExclude = ReadLocalFile(recExcludeStr, "RecExclude")
 	}
 
-	// Read RecDomain(s)
-	Config.RecDomains = readFile(recDomainsStr, Config.RecDomains, "RecDomain")
-
 	// Read URL(s)
 	Config.Urls = readFile(urlStr, Config.Urls, "URL")
+
+	// Read RecDomain(s)
+	Config.RecDomains = readFile(recDomainsStr, Config.RecDomains, "RecDomain")
+	for _, u := range Config.Urls { // add all domains from urls to recdomains
+		urlParsed, err := url.Parse(u)
+		if err != nil {
+			log.Fatal(err)
+		}
+		domain := urlParsed.Hostname()
+		if !slices.Contains(Config.RecDomains, domain) {
+			Config.RecDomains = append(Config.RecDomains, domain)
+		}
+	}
 
 	// Read Cookie(s)
 	Config.Cookies = readFile(setCookiesStr, Config.Cookies, "Cookie")
