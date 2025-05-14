@@ -1390,7 +1390,7 @@ func setQueryParameterMap(queryParameterMap map[string]string, querySlice []stri
 }
 
 func addDomain(x string, domain string) string {
-	if strings.HasPrefix(x, "#") || strings.HasPrefix(x, "mailto:") {
+	if strings.HasPrefix(x, "#") || strings.HasPrefix(x, "mailto:") || strings.HasPrefix(x, "tel:") || strings.HasPrefix(x, "ftp:") {
 		return ""
 	}
 	if strings.HasPrefix(x, "https://"+domain) || strings.HasPrefix(x, "http://"+domain) {
@@ -1413,7 +1413,7 @@ func addDomain(x string, domain string) string {
 		}
 
 		msg := fmt.Sprintf("%s doesn't have %s as domain\n", x, domain)
-		PrintVerbose(msg, NoColor, 1)
+		PrintVerbose(msg, NoColor, 2)
 
 		return ""
 	}
@@ -1439,7 +1439,7 @@ func addUrl(urls []string, url string, added map[string]bool, excluded map[strin
 		// Check if url isnt added yet and if it satisfies RecInclude (=contains it)
 		if excluded[url] {
 			msg := fmt.Sprintf("Skipped to add %s to the queue, because it is on the exclude list\n", url)
-			PrintVerbose(msg, NoColor, 1)
+			PrintVerbose(msg, NoColor, 2)
 		} else if added[url] {
 			msg := fmt.Sprintf("Skipped to add %s to the queue, because it was already added\n", url)
 			PrintVerbose(msg, NoColor, 2)
@@ -1455,8 +1455,14 @@ func addUrl(urls []string, url string, added map[string]bool, excluded map[strin
 	return urls
 }
 
-func CrawlUrls(added map[string]bool, excluded map[string]bool) []string {
-	bodyReader := strings.NewReader(Config.Website.Body)
+func CrawlUrls(u string, added map[string]bool, excluded map[string]bool) []string {
+	webStruct, err := GetWebsite(u, false, false) // get body without cachebuster. TODO use response w/o cachebuster from recon, so it doesn't have to be fetched again
+	if err != nil {
+		msg := fmt.Sprintf("Error while crawling %s: %s\n", u, err.Error())
+		Print(msg, Red)
+		return []string{}
+	}
+	bodyReader := strings.NewReader(webStruct.Body)
 	tokenizer := html.NewTokenizer(bodyReader)
 
 	var urls []string
@@ -1498,6 +1504,7 @@ func CrawlUrls(added map[string]bool, excluded map[string]bool) []string {
 		}
 	}
 
+	// redirect
 	if h := Config.Website.Headers.Get("Location"); h != "" {
 		urls = addUrl(urls, h, added, excluded)
 	}
