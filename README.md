@@ -52,7 +52,7 @@ and can adapt to a specific web cache for more efficient testing. It is highly c
 
 # Installation
 ## Option 1: Pre-built Binary
-Prebuilt binaries of WCVS are provided on the [releases page](https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner/releases). These releases include 2 default wordlists, as well.
+Prebuilt binaries of WCVS are provided on the [releases page](https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner/releases).
 ## Option 2: Kali Linux / BlackArch Repository
 - Kali Linux: `apt install web-cache-vulnerability-scanner`
 - BlackArch: `pacman -S wcvs`
