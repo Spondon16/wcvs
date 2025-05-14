@@ -57,8 +57,9 @@ type (
 		HeaderWordlist    string
 		ParameterWordlist string
 
-		Limiter *rate.Limiter `json:"-"`
-		Website WebsiteStruct `json:"-"`
+		Intitialized bool
+		Limiter      *rate.Limiter `json:"-"`
+		Website      WebsiteStruct `json:"-"`
 	}
 
 	WebsiteStruct struct {

@@ -1047,9 +1047,7 @@ func ScanCSS() reportResult {
 						if !strings.HasSuffix(a.Val, ".css") && !strings.Contains(a.Val, ".css?") {
 							break
 						}
-						Print(a.Val+"\n", Red)
 						tempURL := addDomain(a.Val, Config.Website.Domain)
-						Print(tempURL+"\n", Red)
 						if tempURL != "" {
 							urls = append(urls, tempURL)
 						}

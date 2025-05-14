@@ -1448,7 +1448,7 @@ func addUrl(urls []string, url string, added map[string]bool, excluded map[strin
 			added[url] = true
 		} else {
 			msg := fmt.Sprintf("Skipped to add %s to the queue, because it doesn't satisfy RecInclude\n", url)
-			PrintVerbose(msg, NoColor, 1)
+			PrintVerbose(msg, NoColor, 2)
 		}
 	}
 

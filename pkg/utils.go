@@ -27,7 +27,7 @@ func PrintNewLine() {
 }
 
 func PrintLog(msg string) {
-	if !Config.NoLog {
+	if !Config.NoLog && Config.Intitialized {
 		log.Print(msg)
 	}
 }
@@ -49,7 +49,7 @@ func PrintVerbose(msg string, c int, threshold int) {
 		PrintLog(msg)
 	}
 
-	if Config.Verbosity >= threshold {
+	if Config.Verbosity >= threshold || !Config.Intitialized {
 		fmt.Print(msg)
 	}
 }
