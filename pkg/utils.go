@@ -181,11 +181,11 @@ func addCachebusterParameter(strUrl string, cbvalue string, cb string, prepend b
 	return strUrl, cbvalue
 }
 
-func removeParam(rawURL string, paramToRemove string) (string, error) {
+func removeParam(rawURL string, paramToRemove string) (string, string, error) {
 	// Parse the URL
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// Get current query parameters
@@ -197,7 +197,7 @@ func removeParam(rawURL string, paramToRemove string) (string, error) {
 		parsedURL.RawQuery = query.Encode()
 	}
 
-	return parsedURL.String(), nil
+	return parsedURL.String(), query.Get(paramToRemove), nil
 }
 
 /* Create a random long integer */

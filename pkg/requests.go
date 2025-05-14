@@ -29,6 +29,7 @@ type requestParams struct {
 	name             string
 	identifier       string
 	poison           string
+	ogParam          string
 	url              string
 	cb               string
 	success          string
@@ -363,6 +364,8 @@ func secondRequest(rpFirst requestParams) ([]byte, int, http.Header, error) {
 				parameter = append(parameter, param)
 			}
 		}
+	} else if rpFirst.technique == "Parameters" && rpFirst.ogParam != "" {
+		parameter = append(parameter, rpFirst.ogParam)
 	}
 
 	rp := requestParams{

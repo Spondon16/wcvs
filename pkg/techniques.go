@@ -15,6 +15,8 @@ import (
 
 var impactfulQueries []string
 
+const NOOGPARAM = ""
+
 func init() {
 }
 
@@ -347,8 +349,9 @@ func ScanParameters(parameterList []string) reportResult {
 			success := fmt.Sprintf("Query Parameter %s was successfully poisoned! cachebuster %s: %s poison: %s\n", parameter, Config.Website.Cache.CBName, cb, poison)
 			identifier := fmt.Sprintf("parameter %s", parameter)
 
+			ogValue := NOOGPARAM
 			if strings.Contains(strings.ToLower(rUrl), "?"+parameter+"=") || strings.Contains(strings.ToLower(rUrl), "&"+parameter+"=") { // remove param if it already existed, so that it will be set only one time and that being with the poison value
-				rUrl, _ = removeParam(rUrl, parameter)
+				rUrl, ogValue, _ = removeParam(rUrl, parameter)
 			}
 
 			rp := requestParams{
@@ -359,6 +362,7 @@ func ScanParameters(parameterList []string) reportResult {
 				name:             parameter,
 				identifier:       identifier,
 				poison:           poison,
+				ogParam:          parameter + "=" + ogValue,
 				url:              rUrl,
 				cb:               cb,
 				success:          success,
@@ -740,15 +744,16 @@ func ScanParameterPollution() reportResult {
 			defer func() { <-sem }() // Freigabe der Semaphore, egal was passiert. Dadurch werden Deadlocks verhindert
 
 			url := Config.Website.Url.String()
+			ogValue := "foobar"
 			if strings.Contains(strings.ToLower(url), "?"+s+"=") || strings.Contains(strings.ToLower(url), "&"+s+"=") {
-				url, _ = removeParam(url, s)
+				url, ogValue, _ = removeParam(url, s)
 			}
 
 			var parameters []string
 			if is >= len(impactfulQueries)/2 {
-				parameters = []string{s + "=" + poison, s + "=foobar"}
+				parameters = []string{s + "=" + poison, s + "=" + ogValue}
 			} else {
-				parameters = []string{s + "=foobar", s + "=" + poison}
+				parameters = []string{s + "=" + ogValue, s + "=" + poison}
 			}
 
 			msg := fmt.Sprintf("Testing now Parameter Pollution (%d/%d) %s\n", is+1, len(impactfulQueries)*2, s)
