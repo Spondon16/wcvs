@@ -59,8 +59,8 @@ func init() {
 
 }
 
-func GenerateReport(report Report, currentDate string) {
-	reportPath := Config.GeneratePath + currentDate + "_WCVS_Report.json"
+func GenerateReport(report Report, filePath string) {
+	reportPath := filePath + "_Report.json"
 
 	var file *os.File
 	defer file.Close()

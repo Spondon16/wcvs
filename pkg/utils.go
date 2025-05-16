@@ -2,9 +2,10 @@ package pkg
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"log"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"net/url"
 	"os"
@@ -181,6 +182,21 @@ func addCachebusterParameter(strUrl string, cbvalue string, cb string, prepend b
 	return strUrl, cbvalue
 }
 
+// RandomString generates a random string of the specified length
+func RandomString(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	result := make([]byte, length)
+	for i := range result {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			Print(err.Error(), Red)
+			return "99999999"
+		}
+		result[i] = charset[n.Int64()]
+	}
+	return string(result)
+}
+
 func removeParam(rawURL string, paramToRemove string) (string, string, error) {
 	// Parse the URL
 	parsedURL, err := url.Parse(rawURL)
@@ -202,10 +218,19 @@ func removeParam(rawURL string, paramToRemove string) (string, string, error) {
 
 /* Create a random long integer */
 func randInt() string {
-	min := 100000000000
-	max := 999999999999
-	result := min + rand.Intn(max-min)
-	return strconv.Itoa(result)
+	min := int64(100000000000)
+	max := int64(999999999999)
+	// Range size
+	rangeSize := max - min + 1
+
+	n, err := rand.Int(rand.Reader, big.NewInt(rangeSize))
+	if err != nil {
+		Print(err.Error(), Red)
+		return "999999999999"
+	}
+
+	result := n.Int64() + min
+	return strconv.FormatInt(result, 10)
 }
 
 func waitLimiter(identifier string) {
