@@ -70,7 +70,7 @@ func checkPoisoningIndicators(repResult *reportResult, request reportRequest, su
 		if poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && strings.Contains(body, poison) { // dont check for reflection of http/https/nothttps (used by forwarded headers) or empty poison
 			request.Reason = "Response Body contained " + poison
 		} else if headerWithPoison != "" {
-			request.Reason = fmt.Sprintf("%s header contains poison value %s", headerWithPoison, poison)
+			request.Reason = fmt.Sprintf("%s Header contained poison value %s", headerWithPoison, poison)
 		} else if statusCode1 >= 0 && statusCode1 != Config.Website.StatusCode && statusCode1 == statusCode2 {
 			// check if status code should be ignored
 			if len(Config.IgnoreStatus) > 0 {
@@ -433,7 +433,7 @@ func firstRequestPoisoningIndicator(identifier string, body []byte, poison strin
 		}
 		for x := range header {
 			if strings.Contains(header.Get(x), poison) || (identifierIsCB && strings.Contains(header.Get(x), cb)) {
-				reason = "Response Body contained " + poison
+				reason = x + " Header " + " contained " + poison
 			}
 		}
 	}
@@ -443,7 +443,7 @@ func firstRequestPoisoningIndicator(identifier string, body []byte, poison strin
 
 	if reason != "" {
 		msg := identifier + ": " + reason + "\n"
-		Print(msg, Green)
+		Print(msg, Cyan)
 		return true
 	} else {
 		return false
