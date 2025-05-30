@@ -1371,9 +1371,9 @@ func addDomain(x string, domain string) string {
 	x = strings.SplitN(x, "#", 2)[0] // remove everything after # (anchor)
 	if strings.HasPrefix(x, "https://"+domain) || strings.HasPrefix(x, "http://"+domain) {
 		return x
-	} else if strings.HasPrefix(x, "//") {
-		return Config.Website.Domain + x[1:]
-	} else if !strings.HasPrefix(x, "http://") && !strings.HasPrefix(x, "https://") {
+	} else if strings.HasPrefix(x, "//"+domain) {
+		return x[2:] // remove the //
+	} else if !strings.HasPrefix(x, "http://") && !strings.HasPrefix(x, "https://") && !strings.HasPrefix(x, "//") {
 		if strings.HasPrefix(x, "/") {
 			return Config.Website.Domain + x
 		}
@@ -1385,6 +1385,9 @@ func addDomain(x string, domain string) string {
 			}
 			if strings.HasPrefix(x, "https://"+d) || strings.HasPrefix(x, "http://"+d) {
 				return x
+			}
+			if strings.HasPrefix(x, "//"+d) {
+				return x[2:] // remove the //
 			}
 		}
 
