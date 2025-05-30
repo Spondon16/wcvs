@@ -348,10 +348,8 @@ func firstRequest(rp requestParams) ([]byte, int, reportRequest, http.Header, er
 	repRequest.CurlCommand = commandFixed
 	PrintVerbose("Curl command: "+repRequest.CurlCommand+"\n", NoColor, 2)
 
-	responseBytes, _ := httputil.DumpResponse(resp, true)
+	responseBytes, _ := httputil.DumpResponse(resp, false)
 	repRequest.Response = string(responseBytes)
-
-	//TODO: Also use dumped request/response of 2nd request
 
 	return body, resp.StatusCode, repRequest, resp.Header.Clone(), nil
 }

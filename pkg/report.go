@@ -20,7 +20,7 @@ type (
 		URL           string        `json:"-"`
 		Identifier    string        `json:"identifier"`
 		Reason        string        `json:"reason"`
-		Request       reportRequest `json:"firstRequest"`
+		Request       reportRequest `json:"request"`
 		SecondRequest reportRequest `json:"secondRequest,omitempty"`
 	}
 

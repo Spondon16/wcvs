@@ -923,54 +923,29 @@ func hho(repResult *reportResult) {
 			headers := []string{}
 			values := []string{}
 
-			for i := 0; i < repetition; i++ {
+			for i := range repetition {
 				headername := fmt.Sprintf("X-Oversized-Header-%d", i+1)
 				value := "Big-Value-000000000000000000000000000000000000000000000000000000000000000000000000000000"
 				headers = append(headers, headername)
 				values = append(values, value)
 			}
 
-			var repCheck reportCheck
-
 			rUrl := Config.Website.Url.String()
 			cb := "cb" + randInt()
+			success := fmt.Sprintf("HHO DOS was successfully poisoned! cachebuster %s: %s \n%s\n", Config.Website.Cache.CBName, cb, rUrl)
 			identifier := fmt.Sprintf("HHO with limit of %dk bytes", limit)
 			rp := requestParams{
+				repResult:  repResult,
 				headers:    headers,
 				values:     values,
 				identifier: identifier,
 				url:        rUrl,
 				cb:         cb,
+				success:    success,
+				m:          &m,
 			}
-			_, statusCode1, repRequest, _, err := firstRequest(rp)
-			if err != nil {
-				if err.Error() != "stop" {
-					m.Lock()
-					repResult.HasError = true
-					repResult.ErrorMessages = append(repResult.ErrorMessages, err.Error())
-					m.Unlock()
-				}
-				return
-			}
-			repCheck.Request = repRequest
 
-			// send second request also with cb
-			_, statusCode2, repRequest, respHeader, err := secondRequest(rp)
-			if err != nil {
-				if err.Error() != "stop" {
-					m.Lock()
-					repResult.HasError = true
-					repResult.ErrorMessages = append(repResult.ErrorMessages, err.Error())
-					m.Unlock()
-				}
-				return
-			}
-			repCheck.SecondRequest = repRequest
-
-			msg = fmt.Sprintf("HHO DOS was successfully poisoned! cachebuster %s: %s \n%s\n", Config.Website.Cache.CBName, cb, rUrl)
-			m.Lock()
-			_ = checkPoisoningIndicators(repResult, repCheck, msg, "", "", statusCode1, statusCode2, false, respHeader, false)
-			m.Unlock()
+			_, _, _ = issueRequest(rp)
 		}(repetition)
 	}
 
