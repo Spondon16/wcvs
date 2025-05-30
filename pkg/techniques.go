@@ -818,6 +818,118 @@ func ScanParameterPollution() reportResult {
 	return repResult
 }
 
+/* Check for Parameter Encoding */
+func ScanParameterEncoding() reportResult {
+	var repResult reportResult
+	repResult.Technique = "Parameter Encoding"
+
+	if len(impactfulQueries) == 0 {
+		msg := "No impactful query parameters were found beforehand. Run the query parameter scan (maybe with a different wordlist)."
+		Print(msg+"\n", Yellow)
+		repResult.HasError = true
+		repResult.ErrorMessages = append(repResult.ErrorMessages, msg)
+		return repResult
+	} else {
+		msg := fmt.Sprintf("The following parameters were found to be impactful and will be tested for parameter encoding: %s\n", impactfulQueries)
+		Print(msg, Cyan)
+	}
+
+	threads := Config.Threads
+	if Config.Website.Cache.CBisHTTPMethod {
+		threads = 1 // No multithreading if HTTP Method is used... Otherwise there will be a lot of false negatives/positives
+		PrintVerbose("Can only scan single threaded because a HTTP Method is used as Cachebuster...\n", Yellow, 1)
+	}
+	sem := make(chan int, threads)
+	var wg sync.WaitGroup
+	var m sync.Mutex
+
+	if len(impactfulQueries) > 500 { // only test first 500 impactful queries. TODO decrease amount as such a high amount most likely means they are false positives anyways
+		shortenedQueries := []string{}
+		for i := range 500 {
+			shortenedQueries = append(shortenedQueries, impactfulQueries[i])
+		}
+		impactfulQueries = shortenedQueries
+	}
+	impactfulQueries = append(impactfulQueries, impactfulQueries...) // we want to test each impactful query parameter 2times. One time with the poison in the first and second with the poison in the second appearance
+
+	wg.Add(len(impactfulQueries))
+
+	for is, s := range impactfulQueries {
+		poison := "p" + randInt()
+		prependCB := false // shall be true for the second test of the cachebuster
+
+		go func(is int, s string, poison string, secondHalf bool) {
+			defer wg.Done()
+			sem <- 1
+			defer func() { <-sem }() // Freigabe der Semaphore, egal was passiert. Dadurch werden Deadlocks verhindert
+
+			url := Config.Website.Url.String()
+			ogValue := "foobar"
+			if strings.Contains(strings.ToLower(url), "?"+s+"=") || strings.Contains(strings.ToLower(url), "&"+s+"=") {
+				url, ogValue, _ = removeParam(url, s)
+			}
+
+			var parameters []string
+			if is >= len(impactfulQueries)/2 {
+				parameters = []string{urlEncodeAll(s) + "=" + poison, s + "=" + ogValue}
+			} else {
+				parameters = []string{s + "=" + ogValue, urlEncodeAll(s) + "=" + poison}
+			}
+
+			msg := fmt.Sprintf("Testing now Parameter Encoding (%d/%d) %s\n", is+1, len(impactfulQueries)*2, s)
+			PrintVerbose(msg, NoColor, 2)
+			cb := "cb" + randInt()
+			success := fmt.Sprintf("Query Parameter %s was successfully poisoned via Parameter Encoding! cachebuster %s:%s poison:%s\n", s, Config.Website.Cache.CBName, cb, poison)
+			identifier := fmt.Sprintf("parameter Encoding %s", s)
+
+			rp := requestParams{
+				repResult:        &repResult,
+				headers:          []string{""},
+				values:           []string{poison},
+				parameters:       parameters,
+				technique:        "encoding",
+				identifier:       identifier,
+				poison:           poison,
+				url:              url,
+				cb:               cb,
+				prependCB:        prependCB,
+				success:          success,
+				bodyString:       "",
+				forcePost:        false,
+				duplicateHeaders: false,
+				m:                &m,
+				newCookie:        http.Cookie{},
+			}
+			responseSplittingHeaders, _, _ := issueRequest(rp)
+
+			// check for response splitting, if poison was reflected in a header
+			for _, responseSplittingHeader := range responseSplittingHeaders {
+				msg := fmt.Sprintf("Testing now Parameter Encoding (%d/%d) %s for Response Splitting, because it was reflected in the header %s\n", is+1, len(impactfulQueries)*2, s, responseSplittingHeader)
+				PrintVerbose(msg, Cyan, 1)
+
+				rp.url = url
+				rp.cb = "cb" + randInt()
+				rp.poison += getRespSplit()
+
+				if is >= len(impactfulQueries) {
+					parameters = []string{urlEncodeAll(s) + "=" + rp.poison, s + "=foobar"}
+				} else {
+					parameters = []string{s + "=foobar", urlEncodeAll(s) + "=" + rp.poison}
+				}
+
+				rp.parameters = parameters
+				rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting with Parameter Encoding! cachebuster %s:%s poison:%s\n", s, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.poison)
+				rp.identifier += " response splitting"
+
+				issueRequest(rp)
+			}
+		}(is, s, poison, is >= len(impactfulQueries)/2)
+	}
+	wg.Wait()
+
+	return repResult
+}
+
 /* Check for different DOS techniques */
 func DOS() reportResult {
 	var repResult reportResult

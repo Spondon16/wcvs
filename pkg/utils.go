@@ -112,6 +112,14 @@ func setRequest(req *http.Request, doPost bool, cb string, cookie http.Cookie, p
 	}
 }
 
+func urlEncodeAll(input string) string {
+	encoded := ""
+	for i := 0; i < len(input); i++ {
+		encoded += fmt.Sprintf("%%%02X", input[i])
+	}
+	return encoded
+}
+
 /* TODO wie bei requestCookies nur die erste occurrence eines headers aufnehmen */
 func setRequestHeaders(req *http.Request, cb string) {
 	cache := Config.Website.Cache

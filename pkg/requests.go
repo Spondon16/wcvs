@@ -72,7 +72,7 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 			repCheck.Reason = fmt.Sprintf("Response Body contained poison value %s %d times", poison, strings.Count(body, poison))
 			repCheck.Occurrences = findOccurrencesWithContext(body, poison, 25)
 		} else if len(headersWithPoison) > 0 {
-			repCheck.Reason = fmt.Sprintf("Header(s) %s contained poison value %s", strings.Join(headersWithPoison, ", "), poison)
+			repCheck.Reason = fmt.Sprintf("Response Header(s) %s contained poison value %s", strings.Join(headersWithPoison, ", "), poison)
 		} else if statusCode1 >= 0 && statusCode1 != Config.Website.StatusCode && statusCode1 == statusCode2 {
 			// check if status code should be ignored
 			if len(Config.IgnoreStatus) > 0 {
@@ -446,7 +446,7 @@ func firstRequestPoisoningIndicator(identifier string, body []byte, poison strin
 		}
 		for x := range header {
 			if strings.Contains(header.Get(x), poison) || (identifierIsCB && strings.Contains(header.Get(x), cb)) {
-				reason = x + " Header " + " contained " + poison
+				reason = "Response Header " + x + " contained " + poison
 			}
 		}
 	}
