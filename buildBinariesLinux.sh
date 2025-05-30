@@ -1,6 +1,8 @@
 #!/bin/bash
 version=1.4.2
 
+rm build/*
+
 # Windows amd64
 goos=windows
 goarch=amd64

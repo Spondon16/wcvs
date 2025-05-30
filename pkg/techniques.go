@@ -1019,7 +1019,14 @@ func ScanCSS() reportResult {
 	var repResult reportResult
 	repResult.Technique = "CSS poisoning"
 
-	bodyReader := strings.NewReader(Config.Website.Body)
+	webStruct, err := GetWebsite(Config.Website.Url.String(), false, false) // get body without cachebuster. TODO use response w/o cachebuster from recon, so it doesn't have to be fetched again
+	if err != nil {
+		msg := fmt.Sprintf("Error while fetching css files %s: %s\n", Config.Website.Url.String(), err.Error())
+		Print(msg, Red)
+		repResult.ErrorMessages = append(repResult.ErrorMessages, msg)
+		return repResult
+	}
+	bodyReader := strings.NewReader(webStruct.Body) // use body without cachebuster, so the css files can be found
 	tokenizer := html.NewTokenizer(bodyReader)
 
 	var urls []string
