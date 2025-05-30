@@ -1133,7 +1133,7 @@ func ScanCSS() reportResult {
 				}
 				return
 			}
-			repCheck.SecondRequest = repRequest
+			repCheck.SecondRequest = &repRequest
 
 			if strings.Contains(string(body), cb) {
 				PrintNewLine()

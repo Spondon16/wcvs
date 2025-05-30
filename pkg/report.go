@@ -17,12 +17,12 @@ type (
 	}
 
 	reportCheck struct {
-		URL           string        `json:"-"`
-		Identifier    string        `json:"identifier"`
-		Reason        string        `json:"reason"`
-		Occurrences   []string      `json:"occurrences,omitempty"`
-		Request       reportRequest `json:"request"`
-		SecondRequest reportRequest `json:"secondRequest,omitempty"`
+		URL           string         `json:"-"`
+		Identifier    string         `json:"identifier"`
+		Reason        string         `json:"reason"`
+		Occurrences   []string       `json:"occurrences,omitempty"`
+		Request       reportRequest  `json:"request"`
+		SecondRequest *reportRequest `json:"secondRequest,omitempty"`
 	}
 
 	reportRequest struct {

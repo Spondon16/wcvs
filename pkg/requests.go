@@ -416,7 +416,7 @@ func issueRequest(rp requestParams) (respsplit []string, impact bool, unkeyed bo
 		}
 		return nil, impactful, false
 	}
-	repCheck.SecondRequest = repRequest
+	repCheck.SecondRequest = &repRequest
 	sameBodyLength := len(body1) == len(body2)
 
 	// Lock here, to prevent false positives and too many GetWebsite requests

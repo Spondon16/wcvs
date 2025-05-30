@@ -96,11 +96,24 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 		Timeout:       http.DefaultClient.Timeout,
 	}
 	setRequest(req, false, "", http.Cookie{}, false)
-	_, err = newClient.Do(req)
+	resp, err = newClient.Do(req)
 	if err != nil {
 		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: newClient.Do: %s\n", appendStr, err.Error())
 		PrintVerbose(msg, Yellow, 1)
 		return errors.New(msg)
+	} else {
+		defer resp.Body.Close()
+
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: io.ReadAll: %s\n", appendStr, err.Error())
+			Print(msg, Red)
+			return errors.New(msg)
+		}
+
+		if resp.StatusCode != Config.Website.StatusCode || string(body) != Config.Website.Body {
+			return nil // no cache deception, as the response is not the same as the original one
+		}
 	}
 	resp, err = newClient.Do(req) // send request 2 times so it'll return a cache hit if deception was successful!
 	if err != nil {
@@ -116,11 +129,6 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 			Print(msg, Red)
 			return errors.New(msg)
 		}
-
-		if resp.StatusCode != Config.Website.StatusCode && resp.StatusCode != 404 && resp.StatusCode != 400 {
-			msg = fmt.Sprintf("Unexpected Status Code %d for webCacheDeceptionTemplate: %s\n", resp.StatusCode, appendStr)
-			Print(msg, Yellow)
-		}
 	}
 
 	// Add the request as curl command to the report
@@ -135,7 +143,7 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 		customCacheHeader := strings.ToLower(Config.CacheHeader)
 		for key, val := range resp.Header {
 			switch strings.ToLower(key) {
-			case "x-cache", "cf-cache-status", "x-drupal-cache", "x-varnish-cache", "akamai-cache-status", "server-timing", "x-iinfo", "x-nc", "x-hs-cf-cache-status", "x-proxy-cache", "x-cache-hits", "x-cache-status", "x-cache-info", "x-rack-cache", "cdn_cache_status", "x-akamai-cache", "x-akamai-cache-remote", "x-cache-remote", customCacheHeader:
+			case "x-cache", "cf-cache-status", "x-drupal-cache", "x-varnish-cache", "akamai-cache-status", "server-timing", "x-iinfo", "x-nc", "x-hs-cf-cache-status", "x-proxy-cache", "x-cache-hits", "x-cache-status", "x-cache-info", "x-rack-cache", "cdn_cache_status", "x-akamai-cache", "x-akamai-cache-remote", "x-cache-remote", "x-litespeed-cache", "x-kinsta-cache", "x-ac", customCacheHeader:
 				// CacheHeader flag might not be set (=> ""). Continue in this case
 				if key == "" {
 					continue
@@ -167,13 +175,14 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 		msg = "Curl: " + repCheck.Request.CurlCommand + "\n\n"
 		Print(msg, Green)
 
+		repCheck.Identifier = appendStr
 		repCheck.URL = req.URL.String()
 		// Dump the request without the body
 		var dumpReqBytes []byte
 		dumpReqBytes, _ = httputil.DumpRequest(req, false)
 		repCheck.Request.Request = string(dumpReqBytes)
 		// Dump the response
-		responseBytes, _ := httputil.DumpResponse(resp, true)
+		responseBytes, _ := httputil.DumpResponse(resp, false)
 		repCheck.Request.Response = string(responseBytes)
 
 		repResult.Checks = append(repResult.Checks, repCheck)
