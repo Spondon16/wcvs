@@ -289,8 +289,8 @@ func checkCacheHit(value string, indicator string) bool {
 				return true
 			}
 		}
-		// Some Headers may have "miss,hit" or "hit,miss" as value. But both are cached responses. Use EqualFold for case insensitivity
-	} else if strings.EqualFold(value, "hit") || strings.EqualFold(value, "cached") {
+		// Some Headers may have "miss,hit" or "hit,miss" as value. But both are cached responses.
+	} else if strings.Contains(strings.ToLower(value), "hit") || strings.Contains(strings.ToLower(value), "cached") {
 		return true
 	}
 	return false
