@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"moul.io/http2curl"
 )
@@ -403,6 +404,10 @@ func issueRequest(rp requestParams) (respsplit []string, impact bool, unkeyed bo
 	repCheck.Request = repRequest
 
 	impactful := firstRequestPoisoningIndicator(rp.identifier, body1, rp.poison, header1, Config.Website.Cache.CBName == rp.name, rp.cb, statusCode1)
+
+	if Config.Website.Cache.Indicator == "age" {
+		time.Sleep(1 * time.Second) // wait a second to ensure that age header is not set to 0
+	}
 
 	body2, statusCode2, repRequest, respHeader, err := secondRequest(rp)
 	if err != nil {

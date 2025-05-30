@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"strings"
+	"time"
 
 	"moul.io/http2curl"
 )
@@ -115,6 +116,9 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 			return nil // no cache deception, as the response is not the same as the original one
 		}
 	}
+	if Config.Website.Cache.NoCache || Config.Website.Cache.Indicator == "age" {
+		time.Sleep(1 * time.Second) // wait a second to ensure that age header is not set to 0
+	}
 	resp, err = newClient.Do(req) // send request 2 times so it'll return a cache hit if deception was successful!
 	if err != nil {
 		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: newClient.Do: %s\n", appendStr, err.Error())
@@ -140,28 +144,8 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 
 	var indicValue string
 	if Config.Website.Cache.Indicator == "" { // check if now a cache indicator exists
-		customCacheHeader := strings.ToLower(Config.CacheHeader)
-		for key, val := range resp.Header {
-			switch strings.ToLower(key) {
-			case "x-cache", "cf-cache-status", "x-drupal-cache", "x-varnish-cache", "akamai-cache-status", "server-timing", "x-iinfo", "x-nc", "x-hs-cf-cache-status", "x-proxy-cache", "x-cache-hits", "x-cache-status", "x-cache-info", "x-rack-cache", "cdn_cache_status", "x-akamai-cache", "x-akamai-cache-remote", "x-cache-remote", "x-litespeed-cache", "x-kinsta-cache", "x-ac", customCacheHeader:
-				// CacheHeader flag might not be set (=> ""). Continue in this case
-				if key == "" {
-					continue
-				}
-				Config.Website.Cache.Indicator = key
-				msg := fmt.Sprintf("%s: %s header was found: %s \n", req.URL, key, val)
-				PrintVerbose(msg, NoColor, 1)
-				addHitMissIndicatorMap(strings.ToLower(key))
-			case "age":
-				// only set it it wasn't set to x-cache or sth. similar beforehand
-				if Config.Website.Cache.Indicator == "" {
-					Config.Website.Cache.Indicator = key
-					msg := fmt.Sprintf("%s: %s header was found: %s\n", req.URL, key, val)
-					PrintVerbose(msg, NoColor, 1)
-					addHitMissIndicatorMap(strings.ToLower("age"))
-				}
-			}
-		}
+		cache := analyzeCacheIndicator(resp.Header)
+		Config.Website.Cache.Indicator = cache.Indicator
 	}
 
 	indicValue = strings.TrimSpace(strings.ToLower(resp.Header.Get(Config.Website.Cache.Indicator)))
