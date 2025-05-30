@@ -520,7 +520,7 @@ func ScanParameterCloaking() reportResult {
 		Print(msg, Cyan)
 	}
 
-	utm_parameters := []string{"utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"}
+	utm_parameters := []string{"utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gad_campaignid"}
 	unkeyed_parameters := []string{}
 	parameters_to_test := utm_parameters
 	for k := range Config.Website.Queries {
