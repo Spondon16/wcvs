@@ -53,12 +53,12 @@ func getRespSplit() string {
 	return "\\r\\n" + respSplitHeader + ": " + respSplitValue
 }
 
-func checkPoisoningIndicators(repResult *reportResult, request reportRequest, success string, body string, poison string, statusCode1 int, statusCode2 int, sameBodyLength bool, header http.Header, recursive bool) []string {
+func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, success string, body string, poison string, statusCode1 int, statusCode2 int, sameBodyLength bool, header http.Header, recursive bool) []string {
 	headersWithPoison := []string{}
 	if header != nil && poison != "" && poison != "http" && poison != "https" && poison != "nothttps" { // dont check for reflection of http/https/nothttps (used by forwarded headers) or empty poison
 		for x := range header {
 			if x == respSplitHeader && header.Get(x) == respSplitValue {
-				request.Reason = "HTTP Response Splitting"
+				repCheck.Reason = "HTTP Response Splitting"
 			}
 			if strings.Contains(header.Get(x), poison) {
 				headersWithPoison = append(headersWithPoison, x)
@@ -66,11 +66,11 @@ func checkPoisoningIndicators(repResult *reportResult, request reportRequest, su
 		}
 	}
 
-	if request.Reason == "" {
+	if repCheck.Reason == "" {
 		if poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && strings.Contains(body, poison) { // dont check for reflection of http/https/nothttps (used by forwarded headers) or empty poison
-			request.Reason = fmt.Sprintf("Response Body contained poison value %s %d times", poison, strings.Count(body, poison))
+			repCheck.Reason = fmt.Sprintf("Response Body contained poison value %s %d times", poison, strings.Count(body, poison))
 		} else if len(headersWithPoison) > 0 {
-			request.Reason = fmt.Sprintf("Header(s) %s contained poison value %s", strings.Join(headersWithPoison, ", "), poison)
+			repCheck.Reason = fmt.Sprintf("Header(s) %s contained poison value %s", strings.Join(headersWithPoison, ", "), poison)
 		} else if statusCode1 >= 0 && statusCode1 != Config.Website.StatusCode && statusCode1 == statusCode2 {
 			// check if status code should be ignored
 			if len(Config.IgnoreStatus) > 0 {
@@ -101,14 +101,14 @@ func checkPoisoningIndicators(repResult *reportResult, request reportRequest, su
 				}
 				if err != nil {
 					repResult.HasError = true
-					msg := fmt.Sprintf("%s: couldn't verify if status code %d is the new default status code, because the verification encountered the following error %d times: %s", request.URL, statusCode1, count, err.Error())
+					msg := fmt.Sprintf("%s: couldn't verify if status code %d is the new default status code, because the verification encountered the following error %d times: %s", repCheck.URL, statusCode1, count, err.Error())
 					repResult.ErrorMessages = append(repResult.ErrorMessages, msg)
 				} else {
 					Config.Website = tmpWebsite
 				}
-				return checkPoisoningIndicators(repResult, request, success, body, poison, statusCode1, statusCode2, sameBodyLength, header, true)
+				return checkPoisoningIndicators(repResult, repCheck, success, body, poison, statusCode1, statusCode2, sameBodyLength, header, true)
 			} else {
-				request.Reason = fmt.Sprintf("Status Code %d differed from %d", statusCode1, Config.Website.StatusCode)
+				repCheck.Reason = fmt.Sprintf("Status Code %d differed from %d", statusCode1, Config.Website.StatusCode)
 			}
 		} else if Config.CLDiff != 0 && success != "" && sameBodyLength && len(body) > 0 && compareLengths(len(body), len(Config.Website.Body), Config.CLDiff) {
 			if !recursive {
@@ -125,14 +125,14 @@ func checkPoisoningIndicators(repResult *reportResult, request reportRequest, su
 				}
 				if err != nil {
 					repResult.HasError = true
-					msg := fmt.Sprintf("%s: couldn't verify if body length %d is the new default body length, because the verification request encountered the following error %d times: %s", request.URL, statusCode1, count, err.Error())
+					msg := fmt.Sprintf("%s: couldn't verify if body length %d is the new default body length, because the verification request encountered the following error %d times: %s", repCheck.URL, statusCode1, count, err.Error())
 					repResult.ErrorMessages = append(repResult.ErrorMessages, msg)
 				} else {
 					Config.Website = tmpWebsite
 				}
-				return checkPoisoningIndicators(repResult, request, success, body, poison, statusCode1, statusCode2, sameBodyLength, header, true)
+				return checkPoisoningIndicators(repResult, repCheck, success, body, poison, statusCode1, statusCode2, sameBodyLength, header, true)
 			} else {
-				request.Reason = fmt.Sprintf("Length %d differed more than %d bytes from normal length %d", len(body), Config.CLDiff, len(Config.Website.Body))
+				repCheck.Reason = fmt.Sprintf("Length %d differed more than %d bytes from normal length %d", len(body), Config.CLDiff, len(Config.Website.Body))
 			}
 		} else {
 			return headersWithPoison
@@ -141,14 +141,16 @@ func checkPoisoningIndicators(repResult *reportResult, request reportRequest, su
 
 	PrintNewLine()
 	Print(success, Green)
-	msg := "URL: " + request.URL + "\n"
+	msg := "URL: " + repCheck.URL + "\n"
 	Print(msg, Green)
-	msg = "Reason: " + request.Reason + "\n"
+	msg = "Reason: " + repCheck.Reason + "\n"
 	Print(msg, Green)
-	msg = "Curl: " + request.CurlCommand + "\n\n"
+	msg = "Curl 1st Request: " + repCheck.Request.CurlCommand + "\n"
+	Print(msg, Green)
+	msg = "Curl 2nd Request: " + repCheck.SecondRequest.CurlCommand + "\n\n"
 	Print(msg, Green)
 	repResult.Vulnerable = true
-	repResult.Requests = append(repResult.Requests, request)
+	repResult.Checks = append(repResult.Checks, repCheck)
 	return headersWithPoison
 }
 
@@ -349,14 +351,12 @@ func firstRequest(rp requestParams) ([]byte, int, reportRequest, http.Header, er
 	responseBytes, _ := httputil.DumpResponse(resp, true)
 	repRequest.Response = string(responseBytes)
 
-	repRequest.URL = req.URL.String()
-
 	//TODO: Also use dumped request/response of 2nd request
 
 	return body, resp.StatusCode, repRequest, resp.Header.Clone(), nil
 }
 
-func secondRequest(rpFirst requestParams) ([]byte, int, http.Header, error) {
+func secondRequest(rpFirst requestParams) ([]byte, int, reportRequest, http.Header, error) {
 	var parameter []string
 	if rpFirst.technique == "pollution" {
 		for _, param := range rpFirst.parameters {
@@ -376,15 +376,19 @@ func secondRequest(rpFirst requestParams) ([]byte, int, http.Header, error) {
 		cb:         rpFirst.cb,
 	}
 
-	body, statusCode, _, header, err := firstRequest(rp)
+	body, statusCode, repRequest, header, err := firstRequest(rp)
 
-	return body, statusCode, header, err
+	return body, statusCode, repRequest, header, err
 }
 
 // TODO: ResponseSplitting Methode
 /* return value:first bool is needed for responsesplitting, second bool is only needed for ScanParameters */
 func issueRequest(rp requestParams) (respsplit []string, impact bool, unkeyed bool) {
-	body1, statusCode1, request, header1, err := firstRequest(rp)
+	var repCheck reportCheck
+	repCheck.Identifier = rp.identifier
+	repCheck.URL = rp.url
+
+	body1, statusCode1, repRequest, header1, err := firstRequest(rp)
 	if err != nil {
 		if err.Error() != "stop" {
 			if rp.m != nil {
@@ -397,10 +401,11 @@ func issueRequest(rp requestParams) (respsplit []string, impact bool, unkeyed bo
 
 		return nil, false, false
 	}
+	repCheck.Request = repRequest
 
 	impactful := firstRequestPoisoningIndicator(rp.identifier, body1, rp.poison, header1, Config.Website.Cache.CBName == rp.name, rp.cb, statusCode1)
 
-	body2, statusCode2, respHeader, err := secondRequest(rp)
+	body2, statusCode2, repRequest, respHeader, err := secondRequest(rp)
 	if err != nil {
 		if err.Error() != "stop" {
 			if rp.m != nil {
@@ -412,6 +417,7 @@ func issueRequest(rp requestParams) (respsplit []string, impact bool, unkeyed bo
 		}
 		return nil, impactful, false
 	}
+	repCheck.SecondRequest = repRequest
 	sameBodyLength := len(body1) == len(body2)
 
 	// Lock here, to prevent false positives and too many GetWebsite requests
@@ -420,7 +426,7 @@ func issueRequest(rp requestParams) (respsplit []string, impact bool, unkeyed bo
 		rp.m.Lock()
 		defer rp.m.Unlock()
 	}
-	responseSplittingHeaders := checkPoisoningIndicators(rp.repResult, request, rp.success, string(body2), rp.poison, statusCode1, statusCode2, sameBodyLength, respHeader, false)
+	responseSplittingHeaders := checkPoisoningIndicators(rp.repResult, repCheck, rp.success, string(body2), rp.poison, statusCode1, statusCode2, sameBodyLength, respHeader, false)
 
 	indicValue := strings.TrimSpace(strings.ToLower(respHeader.Get(Config.Website.Cache.Indicator)))
 	hit := checkCacheHit(indicValue, Config.Website.Cache.Indicator)

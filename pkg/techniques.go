@@ -930,6 +930,8 @@ func hho(repResult *reportResult) {
 				values = append(values, value)
 			}
 
+			var repCheck reportCheck
+
 			rUrl := Config.Website.Url.String()
 			cb := "cb" + randInt()
 			identifier := fmt.Sprintf("HHO with limit of %dk bytes", limit)
@@ -940,7 +942,7 @@ func hho(repResult *reportResult) {
 				url:        rUrl,
 				cb:         cb,
 			}
-			_, statusCode1, request, _, err := firstRequest(rp)
+			_, statusCode1, repRequest, _, err := firstRequest(rp)
 			if err != nil {
 				if err.Error() != "stop" {
 					m.Lock()
@@ -950,9 +952,10 @@ func hho(repResult *reportResult) {
 				}
 				return
 			}
+			repCheck.Request = repRequest
 
 			// send second request also with cb
-			_, statusCode2, respHeader, err := secondRequest(rp)
+			_, statusCode2, repRequest, respHeader, err := secondRequest(rp)
 			if err != nil {
 				if err.Error() != "stop" {
 					m.Lock()
@@ -962,10 +965,11 @@ func hho(repResult *reportResult) {
 				}
 				return
 			}
+			repCheck.SecondRequest = repRequest
 
-			msg = fmt.Sprintf("HHO DOS was successfully poisoned! cachebuster %s: %s \n%s\n", Config.Website.Cache.CBName, cb, request.URL)
+			msg = fmt.Sprintf("HHO DOS was successfully poisoned! cachebuster %s: %s \n%s\n", Config.Website.Cache.CBName, cb, rUrl)
 			m.Lock()
-			_ = checkPoisoningIndicators(repResult, request, msg, "", "", statusCode1, statusCode2, false, respHeader, false)
+			_ = checkPoisoningIndicators(repResult, repCheck, msg, "", "", statusCode1, statusCode2, false, respHeader, false)
 			m.Unlock()
 		}(repetition)
 	}
@@ -1110,6 +1114,9 @@ func ScanCSS() reportResult {
 			//Print(msg, NoColor)
 
 			urlWithCb, cb := addCachebusterParameter(url, "", Config.Website.Cache.CBName, false)
+			var repCheck reportCheck
+			repCheck.URL = url
+			repCheck.Identifier = "n/a"
 
 			identifier := url
 			rp := requestParams{
@@ -1117,7 +1124,7 @@ func ScanCSS() reportResult {
 				url:        urlWithCb,
 				cb:         "cb" + randInt(),
 			}
-			body, _, request, _, err := firstRequest(rp)
+			body, _, repRequest, _, err := firstRequest(rp)
 			if err != nil {
 				if err.Error() != "stop" {
 					m.Lock()
@@ -1127,13 +1134,14 @@ func ScanCSS() reportResult {
 				}
 				return
 			}
+			repCheck.Request = repRequest
 
 			if strings.Contains(string(body), cb) {
 				msg = fmt.Sprintf("The following CSS file reflects the url with the cb %s\n%s\n", cb, url)
-				Print(msg, Green)
+				Print(msg, Cyan)
 			}
 
-			body, _, _, err = secondRequest(rp)
+			body, _, repRequest, _, err = secondRequest(rp)
 			if err != nil {
 				if err.Error() != "stop" {
 					m.Lock()
@@ -1143,17 +1151,20 @@ func ScanCSS() reportResult {
 				}
 				return
 			}
+			repCheck.SecondRequest = repRequest
 
 			if strings.Contains(string(body), cb) {
 				PrintNewLine()
-				msg = fmt.Sprintf("A CSS file was successfully poisoned! cachebuster %s: %s\nURL: %s\n", Config.Website.Cache.CBName, cb, request.URL)
+				msg = fmt.Sprintf("A CSS file was successfully poisoned! cachebuster %s: %s\nURL: %s\n", Config.Website.Cache.CBName, cb, url)
 				Print(msg, Green)
-				msg = "Reason: CSS reflects URL\n"
+				Reason := "CSS reflects URL"
+				msg = fmt.Sprintf("Reason: %s\n", Reason)
 				Print(msg, Green)
+				repCheck.Reason = Reason
 
 				m.Lock()
 				repResult.Vulnerable = true
-				repResult.Requests = append(repResult.Requests, request)
+				repResult.Checks = append(repResult.Checks, repCheck)
 				m.Unlock()
 			}
 		}(url)

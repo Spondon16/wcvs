@@ -9,16 +9,22 @@ import (
 
 type (
 	reportResult struct {
-		Technique     string          `json:"technique"`
-		HasError      bool            `json:"hasError"`
-		ErrorMessages []string        `json:"errorMessages"`
-		Vulnerable    bool            `json:"isVulnerable"`
-		Requests      []reportRequest `json:"requests"`
+		Technique     string        `json:"technique"`
+		HasError      bool          `json:"hasError"`
+		ErrorMessages []string      `json:"errorMessages"`
+		Vulnerable    bool          `json:"isVulnerable"`
+		Checks        []reportCheck `json:"checks"`
+	}
+
+	reportCheck struct {
+		URL           string        `json:"-"`
+		Identifier    string        `json:"identifier"`
+		Reason        string        `json:"reason"`
+		Request       reportRequest `json:"firstRequest"`
+		SecondRequest reportRequest `json:"secondRequest,omitempty"`
 	}
 
 	reportRequest struct {
-		URL         string `json:"-"`
-		Reason      string `json:"reason"`
 		CurlCommand string `json:"curlCommand"`
 		Request     string `json:"request"`
 		Response    string `json:"response"`

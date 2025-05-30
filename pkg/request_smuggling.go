@@ -322,9 +322,10 @@ func httpRequestSmuggling(req string, result *reportResult, proxyUrl *url.URL) {
 
 func fillRequest(result *reportResult, reason string, req string, reqURL string) {
 	result.Vulnerable = true
-	var request reportRequest
-	request.Reason = reason
-	request.Request = req
-	request.URL = reqURL
-	result.Requests = append(result.Requests, request)
+	var repCheck reportCheck
+	repCheck.Reason = reason
+	repCheck.Request.Request = req
+	repCheck.Request.Response = "n/a"
+	repCheck.URL = reqURL
+	result.Checks = append(result.Checks, repCheck)
 }

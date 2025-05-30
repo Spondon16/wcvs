@@ -75,7 +75,7 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 	var err error
 	var msg string
 	var body []byte
-	var repRequest reportRequest
+	var repCheck reportCheck
 
 	rUrl := Config.Website.Url.String()
 	// Überprüfen, ob der String genau zwei `//` enthält
@@ -128,7 +128,7 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 	if err != nil {
 		PrintVerbose("Error: http2curl: "+err.Error()+"\n", Yellow, 1)
 	}
-	repRequest.CurlCommand = command.String()
+	repCheck.Request.CurlCommand = command.String()
 
 	var indicValue string
 	if Config.Website.Cache.Indicator == "" { // check if now a cache indicator exists
@@ -161,24 +161,24 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 	// check if there's a cache hit and if the body didn't change (otherwise it could be a cached error page, for example)
 	if checkCacheHit(indicValue, "") && string(body) == Config.Website.Body {
 		repResult.Vulnerable = true
-		repRequest.Reason = "The response got cached due to Web Cache Deception"
+		repCheck.Reason = "The response got cached due to Web Cache Deception"
 		msg = fmt.Sprintf("%s was successfully decepted! appended: %s\n", rUrl, appendStr)
 		Print(msg, Green)
-		msg = "Curl: " + repRequest.CurlCommand + "\n\n"
+		msg = "Curl: " + repCheck.Request.CurlCommand + "\n\n"
 		Print(msg, Green)
 
-		repRequest.URL = req.URL.String()
+		repCheck.URL = req.URL.String()
 		// Dump the request without the body
 		var dumpReqBytes []byte
 		dumpReqBytes, _ = httputil.DumpRequest(req, false)
-		repRequest.Request = string(dumpReqBytes)
+		repCheck.Request.Request = string(dumpReqBytes)
 		// Dump the response
 		responseBytes, _ := httputil.DumpResponse(resp, true)
-		repRequest.Response = string(responseBytes)
+		repCheck.Request.Response = string(responseBytes)
 
-		repResult.Requests = append(repResult.Requests, repRequest)
+		repResult.Checks = append(repResult.Checks, repCheck)
 	} else {
-		PrintVerbose("Curl command: "+repRequest.CurlCommand+"\n", NoColor, 2)
+		PrintVerbose("Curl command: "+repCheck.Request.CurlCommand+"\n", NoColor, 2)
 	}
 
 	return nil
