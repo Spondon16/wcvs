@@ -295,3 +295,29 @@ func checkCacheHit(value string, indicator string) bool {
 	}
 	return false
 }
+
+// like grep -C
+func findOccurrencesWithContext(body, search string, context int) []string {
+	var results []string
+	inputLen := len(body)
+	searchLen := len(search)
+
+	for i := 0; i <= inputLen-searchLen; {
+		if body[i:i+searchLen] == search {
+			start := i - context
+			if start < 0 {
+				start = 0
+			}
+			end := i + searchLen + context
+			if end > inputLen {
+				end = inputLen
+			}
+			results = append(results, body[start:end])
+			i += searchLen // skip past this match
+		} else {
+			i++
+		}
+	}
+
+	return results
+}

@@ -20,6 +20,7 @@ type (
 		URL           string        `json:"-"`
 		Identifier    string        `json:"identifier"`
 		Reason        string        `json:"reason"`
+		Occurrences   []string      `json:"occurrences,omitempty"`
 		Request       reportRequest `json:"request"`
 		SecondRequest reportRequest `json:"secondRequest,omitempty"`
 	}
@@ -37,11 +38,14 @@ type (
 	}
 
 	ReportWebsite struct {
-		URL           string         `json:"url"`
-		Vulnerable    bool           `json:"isVulnerable"`
-		HasError      bool           `json:"hasError"`
-		ErrorMessages []string       `json:"errorMessages"`
-		Results       []reportResult `json:"results"`
+		URL            string         `json:"url"`
+		Vulnerable     bool           `json:"isVulnerable"`
+		HasError       bool           `json:"hasError"`
+		CacheIndicator string         `json:"cacheIndicator"`
+		CBwasFound     bool           `json:"cacheBusterFound"`
+		CBName         string         `json:"cacheBuster"`
+		ErrorMessages  []string       `json:"errorMessages"`
+		Results        []reportResult `json:"results"`
 	}
 
 	Report struct {

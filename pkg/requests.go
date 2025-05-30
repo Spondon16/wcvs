@@ -69,6 +69,7 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 	if repCheck.Reason == "" {
 		if poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && strings.Contains(body, poison) { // dont check for reflection of http/https/nothttps (used by forwarded headers) or empty poison
 			repCheck.Reason = fmt.Sprintf("Response Body contained poison value %s %d times", poison, strings.Count(body, poison))
+			repCheck.Occurrences = findOccurrencesWithContext(body, poison, 25)
 		} else if len(headersWithPoison) > 0 {
 			repCheck.Reason = fmt.Sprintf("Header(s) %s contained poison value %s", strings.Join(headersWithPoison, ", "), poison)
 		} else if statusCode1 >= 0 && statusCode1 != Config.Website.StatusCode && statusCode1 == statusCode2 {
