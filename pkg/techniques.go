@@ -14,6 +14,7 @@ import (
 )
 
 var impactfulQueries []string
+var unkeyedQueries []string
 
 const NOOGPARAM = ""
 
@@ -56,7 +57,7 @@ func ScanCookies() reportResult {
 			m:                nil,
 			newCookie:        newCookie,
 		}
-		responseSplittingHeader, _ := issueRequest(rp)
+		responseSplittingHeader, _, _ := issueRequest(rp)
 
 		// check for response splitting, if poison was reflected in a header
 		if responseSplittingHeader != "" {
@@ -156,7 +157,7 @@ func ForwardHeadersTemplate(repResult *reportResult, headers []string, values []
 		m:                nil,
 		newCookie:        http.Cookie{},
 	}
-	responseSplittingHeader, _ := issueRequest(rp)
+	responseSplittingHeader, _, _ := issueRequest(rp)
 
 	// check for response splitting, if poison was reflected in a header
 	if responseSplittingHeader != "" {
@@ -276,7 +277,7 @@ func ScanHeaders(headerList []string) reportResult {
 				m:                &m,
 				newCookie:        http.Cookie{},
 			}
-			responseSplittingHeader, _ := issueRequest(rp)
+			responseSplittingHeader, _, _ := issueRequest(rp)
 
 			// check for response splitting, if poison was reflected in a header
 			if responseSplittingHeader != "" {
@@ -304,12 +305,12 @@ func ScanParameters(parameterList []string) reportResult {
 	var repResult reportResult
 	repResult.Technique = "Parameters"
 
-	var parametersToTest []string
-
+	parametersToTest := parameterList
 	for k := range Config.Website.Queries {
-		parametersToTest = append(parametersToTest, k) // add custom parameters to list
+		if !slices.Contains(parameterList, k) { // only add parameters which are not already in the list
+			parametersToTest = append(parametersToTest, k) // add custom parameters to list
+		}
 	}
-	parametersToTest = append(parametersToTest, parameterList...)
 
 	threads := Config.Threads
 	if Config.Website.Cache.CBisHTTPMethod {
@@ -322,6 +323,7 @@ func ScanParameters(parameterList []string) reportResult {
 	var m sync.Mutex
 
 	impactfulQueries = []string{}
+	unkeyedQueries = []string{}
 
 	msg := fmt.Sprintf("Testing %d parameters\n", len(parametersToTest))
 	PrintVerbose(msg, NoColor, 1)
@@ -372,10 +374,12 @@ func ScanParameters(parameterList []string) reportResult {
 				newCookie:        http.Cookie{},
 				m:                &m,
 			}
-			responseSplittingHeader, appendParameter := issueRequest(rp)
+			responseSplittingHeader, impactful, unkeyed := issueRequest(rp)
 
-			if appendParameter {
+			if impactful && !unkeyed {
 				impactfulQueries = append(impactfulQueries, parameter)
+			} else if unkeyed {
+				unkeyedQueries = append(unkeyedQueries, parameter)
 			}
 			// check for response splitting, if poison was reflected in a header
 			if responseSplittingHeader != "" {
@@ -479,7 +483,7 @@ func ScanFatGET() reportResult {
 					m:                &m,
 					newCookie:        http.Cookie{},
 				}
-				responseSplittingHeader, _ := issueRequest(rp)
+				responseSplittingHeader, _, _ := issueRequest(rp)
 
 				// check for response splitting, if poison was reflected in a header
 				if responseSplittingHeader != "" {
@@ -521,10 +525,11 @@ func ScanParameterCloaking() reportResult {
 	}
 
 	utm_parameters := []string{"utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gad_campaignid"}
-	unkeyed_parameters := []string{}
 	parameters_to_test := utm_parameters
-	for k := range Config.Website.Queries {
-		parameters_to_test = append(parameters_to_test, k)
+	for _, k := range unkeyedQueries {
+		if !slices.Contains(parameters_to_test, k) { // only add parameters which are not already in the list
+			parameters_to_test = append(parameters_to_test, k)
+		}
 	}
 
 	/***********TODO Check if urlWithCb already contains utm parameter.
@@ -550,6 +555,8 @@ func ScanParameterCloaking() reportResult {
 	sem := make(chan int, threads)
 	var wg sync.WaitGroup
 	var m sync.Mutex
+
+	unkeyed_parameters := []string{}
 	cache := Config.Website.Cache
 	if cache.Indicator == "" || cache.TimeIndicator {
 		msg := "hit/miss isn't verbose. Can't check which parameters unkeyed, so all utm_parameters and query parameters will be used\n"
@@ -674,7 +681,7 @@ func ScanParameterCloaking() reportResult {
 					m:                &m,
 					newCookie:        http.Cookie{},
 				}
-				responseSplittingHeader, _ := issueRequest(rp)
+				responseSplittingHeader, _, _ := issueRequest(rp)
 
 				// check for response splitting, if poison was reflected in a header
 				if responseSplittingHeader != "" {
@@ -780,7 +787,7 @@ func ScanParameterPollution() reportResult {
 				m:                &m,
 				newCookie:        http.Cookie{},
 			}
-			responseSplittingHeader, _ := issueRequest(rp)
+			responseSplittingHeader, _, _ := issueRequest(rp)
 
 			// check for response splitting, if poison was reflected in a header
 			if responseSplittingHeader != "" {
@@ -1008,7 +1015,7 @@ func headerDOSTemplate(repResult *reportResult, values []string, header string, 
 				m:                &m,
 				newCookie:        http.Cookie{},
 			}
-			responseSplittingHeader, _ := issueRequest(rp)
+			responseSplittingHeader, _, _ := issueRequest(rp)
 
 			// check for response splitting, if poison was reflected in a header
 			if responseSplittingHeader != "" {

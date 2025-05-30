@@ -383,7 +383,7 @@ func secondRequest(rpFirst requestParams) ([]byte, int, http.Header, error) {
 
 // TODO: ResponseSplitting Methode
 /* return value:first bool is needed for responsesplitting, second bool is only needed for ScanParameters */
-func issueRequest(rp requestParams) (string, bool) {
+func issueRequest(rp requestParams) (respsplit string, impact bool, unkeyed bool) {
 	body1, statusCode1, request, header1, err := firstRequest(rp)
 	if err != nil {
 		if err.Error() != "stop" {
@@ -395,7 +395,7 @@ func issueRequest(rp requestParams) (string, bool) {
 			rp.repResult.ErrorMessages = append(rp.repResult.ErrorMessages, err.Error())
 		}
 
-		return "", false
+		return "", false, false
 	}
 
 	impactful := firstRequestPoisoningIndicator(rp.identifier, body1, rp.poison, header1, Config.Website.Cache.CBName == rp.name, rp.cb) // TODO add different status code as indicator?
@@ -410,7 +410,7 @@ func issueRequest(rp requestParams) (string, bool) {
 			rp.repResult.HasError = true
 			rp.repResult.ErrorMessages = append(rp.repResult.ErrorMessages, err.Error())
 		}
-		return "", impactful
+		return "", impactful, false
 	}
 	sameBodyLength := len(body1) == len(body2)
 
@@ -422,7 +422,10 @@ func issueRequest(rp requestParams) (string, bool) {
 	}
 	responseSplittingHeader := checkPoisoningIndicators(rp.repResult, request, rp.success, string(body2), rp.poison, statusCode1, statusCode2, sameBodyLength, respHeader, false)
 
-	return responseSplittingHeader, impactful
+	indicValue := strings.TrimSpace(strings.ToLower(respHeader.Get(Config.Website.Cache.Indicator)))
+	hit := checkCacheHit(indicValue, Config.Website.Cache.Indicator)
+
+	return responseSplittingHeader, impactful, hit
 }
 
 func firstRequestPoisoningIndicator(identifier string, body []byte, poison string, header http.Header, identifierIsCB bool, cb string) bool {
