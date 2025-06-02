@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -1374,10 +1375,11 @@ func addDomain(x string, domain string) string {
 	} else if strings.HasPrefix(x, "//"+domain) {
 		return x[2:] // remove the //
 	} else if !strings.HasPrefix(x, "http://") && !strings.HasPrefix(x, "https://") && !strings.HasPrefix(x, "//") {
+		basePath := path.Dir(Config.Website.Url.Path)
 		if strings.HasPrefix(x, "/") {
-			return Config.Website.Domain + x
+			return basePath + x
 		}
-		return Config.Website.Domain + "/" + x
+		return Config.Website.Domain + basePath + "/" + x
 	} else {
 		for i, d := range Config.RecDomains {
 			if Config.RecDomains[i] == "" {
