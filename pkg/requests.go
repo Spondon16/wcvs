@@ -90,7 +90,7 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 				count := 3
 				for i := 0; i < count; i++ {
 					Print(fmt.Sprintln("Status Code", statusCode1, "differed from the default", Config.Website.StatusCode, ", sending verification request", i+1, "from up to 3"), Yellow)
-					tmpWebsite, _, _, err = GetWebsite(Config.Website.Url.String(), true, true)
+					tmpWebsite, err = GetWebsite(Config.Website.Url.String(), true, true)
 					if err == nil {
 						Print(fmt.Sprintln("The verification request returned the Status Code", tmpWebsite.StatusCode), Yellow)
 						break
@@ -115,7 +115,7 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 				// try up to 3 times
 				count := 3
 				for i := 0; i < count; i++ {
-					tmpWebsite, _, _, err = GetWebsite(Config.Website.Url.String(), true, true)
+					tmpWebsite, err = GetWebsite(Config.Website.Url.String(), true, true)
 					if err == nil {
 						break
 					}

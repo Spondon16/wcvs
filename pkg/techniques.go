@@ -1144,7 +1144,7 @@ func ScanCSS() reportResult {
 	var repResult reportResult
 	repResult.Technique = "CSS poisoning"
 
-	webStruct, _, _, err := GetWebsite(Config.Website.Url.String(), false, false) // get body without cachebuster. TODO use response w/o cachebuster from recon, so it doesn't have to be fetched again
+	webStruct, err := GetWebsite(Config.Website.Url.String(), false, false) // get body without cachebuster. TODO use response w/o cachebuster from recon, so it doesn't have to be fetched again
 	if err != nil {
 		msg := fmt.Sprintf("Error while fetching css files %s: %s\n", Config.Website.Url.String(), err.Error())
 		Print(msg, Red)

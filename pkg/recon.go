@@ -1209,7 +1209,7 @@ func cachebusterHTTPMethod(cache *CacheStruct) []error {
 }
 
 /* Simple get request to get the body of a normal response and the cookies */
-func GetWebsite(requrl string, setStatusCode bool, cacheBuster bool) (WebsiteStruct, *http.Request, *http.Response, error) {
+func GetWebsite(requrl string, setStatusCode bool, cacheBuster bool) (WebsiteStruct, error) {
 	errorString := "GetWebsite"
 
 	var web WebsiteStruct
@@ -1267,17 +1267,18 @@ func GetWebsite(requrl string, setStatusCode bool, cacheBuster bool) (WebsiteStr
 	if err != nil {
 		msg := fmt.Sprintf("%s: http.NewRequest: %s", errorString, err.Error())
 		Print(msg+"\n", Red)
-		return web, req, nil, errors.New(msg)
+		return web, errors.New(msg)
 	}
 
 	setRequest(req, Config.DoPost, cb, http.Cookie{}, false)
 	waitLimiter(errorString)
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		msg := fmt.Sprintf("%s: http.DefaultClient.Do: %s", errorString, err.Error()) // Error: context deadline exceeded -> panic; runtime error
 
 		Print(msg+"\n", Red)
-		return web, req, resp, errors.New(msg)
+		return web, errors.New(msg)
 	}
 
 	defer resp.Body.Close()
@@ -1286,14 +1287,14 @@ func GetWebsite(requrl string, setStatusCode bool, cacheBuster bool) (WebsiteStr
 	if err != nil {
 		msg := fmt.Sprintf("%s: ioutil.ReadAll: %s", errorString, err.Error())
 		Print(msg+"\n", Red)
-		return web, req, resp, errors.New(msg)
+		return web, errors.New(msg)
 	}
 
 	weburl, err := url.Parse(requrl)
 	if err != nil {
 		msg := fmt.Sprintf("%s: url.Parse: %s", errorString, err.Error())
 		Print(msg+"\n", Red)
-		return web, req, resp, errors.New(msg)
+		return web, errors.New(msg)
 	}
 
 	tempStatusCode := Config.Website.StatusCode
@@ -1337,7 +1338,7 @@ func GetWebsite(requrl string, setStatusCode bool, cacheBuster bool) (WebsiteStr
 		//Added:      make(map[string]bool),
 	}
 
-	return web, req, resp, nil
+	return web, nil
 }
 
 func setQueryParameterMap(queryParameterMap map[string]string, querySlice []string) map[string]string {
@@ -1437,7 +1438,7 @@ func addUrl(urls []string, url string, added map[string]bool, excluded map[strin
 }
 
 func CrawlUrls(u string, added map[string]bool, excluded map[string]bool) []string {
-	webStruct, _, _, err := GetWebsite(u, false, false) // get body without cachebuster. TODO use response w/o cachebuster from recon, so it doesn't have to be fetched again
+	webStruct, err := GetWebsite(u, false, false) // get body without cachebuster. TODO use response w/o cachebuster from recon, so it doesn't have to be fetched again
 	if err != nil {
 		msg := fmt.Sprintf("Error while crawling %s: %s\n", u, err.Error())
 		Print(msg, Red)

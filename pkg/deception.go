@@ -3,6 +3,7 @@ package pkg
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"strings"
@@ -81,6 +82,8 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 	var repCheck reportCheck
 	var req *http.Request
 	var resp *http.Response
+	var err error
+	var body []byte
 
 	rUrl := Config.Website.Url.String()
 	// Überprüfen, ob der String genau zwei `//` enthält
@@ -89,22 +92,50 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 		rUrl += "/"
 	}
 
-	web, _, _, err := GetWebsite(rUrl+appendStr, false, false)
+	req, err = http.NewRequest("GET", rUrl+appendStr, nil)
 	if err != nil {
-		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: GetWebsite: %s\n", appendStr, err.Error())
+		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: http.NewRequest: %s\n", appendStr, err.Error())
 		Print(msg, Red)
 		return errors.New(msg)
 	}
 
-	if web.StatusCode != Config.Website.StatusCode || web.Body != Config.Website.Body {
+	// Do request
+	newClient := http.Client{
+		CheckRedirect: http.DefaultClient.CheckRedirect,
+		Timeout:       http.DefaultClient.Timeout,
+	}
+	setRequest(req, false, "", http.Cookie{}, false)
+	resp, err = newClient.Do(req)
+	if err != nil {
+		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: newClient.Do: %s\n", appendStr, err.Error())
+		PrintVerbose(msg, Yellow, 1)
+		return errors.New(msg)
+	}
+	defer resp.Body.Close()
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: io.ReadAll: %s\n", appendStr, err.Error())
+		Print(msg, Red)
+		return errors.New(msg)
+	}
+	if resp.StatusCode != Config.Website.StatusCode || string(body) != Config.Website.Body {
 		return nil // no cache deception, as the response is not the same as the original one
 	}
+
 	if Config.Website.Cache.NoCache || Config.Website.Cache.Indicator == "age" {
 		time.Sleep(1 * time.Second) // wait a second to ensure that age header is not set to 0
 	}
-	web, req, resp, err = GetWebsite(rUrl+appendStr, false, false)
+
+	resp, err = newClient.Do(req)
 	if err != nil {
-		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: GetWebsite: %s\n", appendStr, err.Error())
+		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: newClient.Do: %s\n", appendStr, err.Error())
+		PrintVerbose(msg, Yellow, 1)
+		return errors.New(msg)
+	}
+	defer resp.Body.Close()
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: io.ReadAll: %s\n", appendStr, err.Error())
 		Print(msg, Red)
 		return errors.New(msg)
 	}
@@ -118,14 +149,14 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 
 	var indicValue string
 	if Config.Website.Cache.Indicator == "" { // check if now a cache indicator exists
-		cache := analyzeCacheIndicator(web.Headers)
+		cache := analyzeCacheIndicator(resp.Header)
 		Config.Website.Cache.Indicator = cache.Indicator
 	}
 
-	indicValue = strings.TrimSpace(strings.ToLower(web.Headers.Get(Config.Website.Cache.Indicator)))
+	indicValue = strings.TrimSpace(strings.ToLower(resp.Header.Get(Config.Website.Cache.Indicator)))
 
 	// check if there's a cache hit and if the body didn't change (otherwise it could be a cached error page, for example)
-	if checkCacheHit(indicValue, "") && web.Body == Config.Website.Body {
+	if checkCacheHit(indicValue, "") && string(body) == Config.Website.Body {
 		repResult.Vulnerable = true
 		repCheck.Reason = "The response got cached due to Web Cache Deception"
 		msg = fmt.Sprintf("%s was successfully decepted! appended: %s\n", rUrl, appendStr)
