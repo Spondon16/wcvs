@@ -1231,7 +1231,7 @@ func ScanCSS() reportResult {
 				url:        urlWithCb,
 				cb:         "cb" + randInt(),
 			}
-			body, _, repRequest, _, err := firstRequest(rp)
+			body, status, repRequest, _, err := firstRequest(rp)
 			if err != nil {
 				if err.Error() != "stop" {
 					m.Lock()
@@ -1242,6 +1242,9 @@ func ScanCSS() reportResult {
 				return
 			}
 			repCheck.Request = repRequest
+			if status != 200 {
+				return
+			}
 
 			if strings.Contains(string(body), cb) {
 				msg = fmt.Sprintf("The following CSS file reflects the url with the cb %s\n%s\n", cb, url)

@@ -198,13 +198,10 @@ func addParameters(urlStr *string, parameters []string) {
 	}
 }
 
-func firstRequest(rp requestParams) ([]byte, int, reportRequest, http.Header, error) {
+func firstRequest(rp requestParams) (body []byte, respStatusCode int, repRequest reportRequest, respHeader http.Header, err error) {
 	var req *http.Request
 	var resp *http.Response
-	var err error
 	var msg string
-	var body []byte
-	var repRequest reportRequest
 
 	if rp.headers == nil {
 		rp.headers = []string{""}
