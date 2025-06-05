@@ -217,7 +217,7 @@ func ScanHeaders(headerList []string) reportResult {
 	repResult.Technique = "Headers"
 	for _, header := range Config.Headers { // add custom headers to list
 		headerVal := strings.Split(header, ":")[0]
-		headerList = append(Config.Headers, headerVal)
+		headerList = append(headerList, headerVal)
 	}
 
 	threads := Config.Threads
