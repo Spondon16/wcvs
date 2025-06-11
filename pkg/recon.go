@@ -1377,10 +1377,7 @@ func addDomain(x string, domain string) string {
 		return x[2:] // remove the //
 	} else if !strings.HasPrefix(x, "http://") && !strings.HasPrefix(x, "https://") && !strings.HasPrefix(x, "//") {
 		basePath := path.Dir(Config.Website.Url.Path)
-		if strings.HasPrefix(x, "/") {
-			return basePath + x
-		}
-		return Config.Website.Domain + basePath + "/" + x
+		return Config.Website.Domain + strings.TrimSuffix(basePath, "/") + "/" + strings.TrimPrefix(x, "/")
 	} else {
 		for i, d := range Config.RecDomains {
 			if Config.RecDomains[i] == "" {
@@ -1461,6 +1458,9 @@ func CrawlUrls(u string, added map[string]bool, excluded map[string]bool) []stri
 			if token.Data == "a" || token.Data == "link" {
 				for _, a := range token.Attr {
 					if a.Key == "href" {
+						//if strings.HasSuffix(a.Val, ".css") && strings.Contains(a.Val, ".css?") { // TODO: Flag to exclude css files from thorough scanning
+						//	break
+						//}
 						urls = addUrl(urls, a.Val, added, excluded)
 						break
 					}
