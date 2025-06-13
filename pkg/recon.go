@@ -1376,8 +1376,12 @@ func addDomain(x string, domain string) string {
 	} else if strings.HasPrefix(x, "//"+domain) {
 		return x[2:] // remove the //
 	} else if !strings.HasPrefix(x, "http://") && !strings.HasPrefix(x, "https://") && !strings.HasPrefix(x, "//") {
-		basePath := path.Dir(Config.Website.Url.Path)
-		return Config.Website.Domain + strings.TrimSuffix(basePath, "/") + "/" + strings.TrimPrefix(x, "/")
+		if !strings.HasPrefix(x, "/") {
+			return Config.Website.Domain + x
+		} else { // we need to add the basepath to the relative path
+			basePath := path.Dir(Config.Website.Url.Path)
+			return Config.Website.Domain + strings.TrimSuffix(basePath, "/") + "/" + strings.TrimPrefix(x, "/")
+		}
 	} else {
 		for i, d := range Config.RecDomains {
 			if Config.RecDomains[i] == "" {
