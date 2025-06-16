@@ -99,6 +99,8 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 		return errors.New(msg)
 	}
 
+	waitLimiter("Web Cache Deception")
+
 	// Do request
 	newClient := http.Client{
 		CheckRedirect: http.DefaultClient.CheckRedirect,
@@ -125,6 +127,8 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 	if Config.Website.Cache.NoCache || Config.Website.Cache.Indicator == "age" {
 		time.Sleep(1 * time.Second) // wait a second to ensure that age header is not set to 0
 	}
+
+	waitLimiter("Web Cache Deception")
 
 	resp, err = newClient.Do(req)
 	if err != nil {
