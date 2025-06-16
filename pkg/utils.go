@@ -338,7 +338,7 @@ func analyzeCacheIndicator(headers http.Header) CacheStruct {
 		case "cache-control", "pragma":
 			msg := fmt.Sprintf("%s header was found: %s \n", key, val)
 			PrintVerbose(msg, Cyan, 1)
-		case "x-cache", "cf-cache-status", "x-drupal-cache", "x-varnish-cache", "akamai-cache-status", "server-timing", "x-iinfo", "x-nc", "x-hs-cf-cache-status", "x-proxy-cache", "x-cache-hits", "x-cache-status", "x-cache-info", "x-rack-cache", "cdn_cache_status", "x-akamai-cache", "x-akamai-cache-remote", "x-cache-remote", "x-litespeed-cache", "x-kinsta-cache", "x-ac", "cache-status", customCacheHeader:
+		case "x-cache", "cf-cache-status", "x-drupal-cache", "x-varnish-cache", "akamai-cache-status", "server-timing", "x-iinfo", "x-nc", "x-hs-cf-cache-status", "x-proxy-cache", "x-cache-hits", "x-cache-status", "x-cache-info", "x-rack-cache", "cdn_cache_status", "x-akamai-cache", "x-akamai-cache-remote", "x-cache-remote", "x-litespeed-cache", "x-kinsta-cache", "x-ac", "cache-status", "ki-cf-cache-status", customCacheHeader:
 			// CacheHeader flag might not be set (=> ""). Continue in this case
 			if key == "" {
 				continue
