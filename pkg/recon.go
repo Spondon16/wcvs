@@ -50,103 +50,110 @@ func CheckCache(parameterList []string, headerList []string) (CacheStruct, bool,
 	var cache CacheStruct
 	var errSlice []error
 
-	// analyze the website headers
-	cache = analyzeCacheIndicator(Config.Website.Headers)
+	// analyze the website headers for cache indicators
+	cacheIndicators := analyzeCacheIndicator(Config.Website.Headers)
 
-	alwaysMiss := false
-	var err error
-	if cache.Indicator == "" {
+	alwaysMiss := true
+	if len(cacheIndicators) == 0 {
 		msg := "No x-cache (or other cache hit/miss header) header was found\nThe time will be measured as cache hit/miss indicator\n"
 		Print(msg, Yellow)
 	} else {
-		alwaysMiss, err = checkIfAlwaysMiss(cache)
-		if err != nil {
-			errSlice = append(errSlice, err)
+		for _, cacheIndicator := range cacheIndicators {
+			miss, err := checkIfAlwaysMiss(cacheIndicator)
+			if err != nil {
+				errSlice = append(errSlice, err)
+			}
+			if !miss {
+				alwaysMiss = false
+				msg := fmt.Sprintf("The following cache indicator indicated a hit: %s\n", cacheIndicator)
+				PrintVerbose(msg, Cyan, 1)
+				cache.Indicator = cacheIndicator
+			}
 		}
-	}
 
-	if cache.Indicator == "" && !cache.TimeIndicator {
-		msg := "Time measurement as indicator is deactivated, skipping cachebuster tests\n"
-		Print(msg, Yellow)
-	} else {
-		// test for cachebuster, if the cache doesnt always return a miss
-		if !alwaysMiss {
-			// Check first if a parameter can be used as cachebuster
-			if !cache.CBwasFound {
-				errs := cachebusterParameter(&cache, nil)
-				if len(errs) > 0 {
-					errSlice = append(errSlice, errs...)
-				}
-			}
-
-			// Check second if a header can be used as cachebuster
-			if !cache.CBwasFound {
-				errs := cachebusterHeader(&cache, nil)
-				if len(errs) > 0 {
-					errSlice = append(errSlice, errs...)
-				}
-			}
-
-			// Check third if a cookie can be used as cachebuster
-			if !cache.CBwasFound {
-				errs := cachebusterCookie(&cache)
-				if len(errs) > 0 {
-					errSlice = append(errSlice, errs...)
-				}
-			}
-
-			if Config.SkipWordlistCachebuster {
-				msg := "Skipping wordlist cachebuster tests\n"
-				PrintVerbose(msg, Yellow, 1)
-			} else {
-				// Check fourth if a parameter from the wordlist can be used as cachebuster
+		if cache.Indicator == "" && !cache.TimeIndicator {
+			msg := "Time measurement as indicator is deactivated, skipping cachebuster tests\n"
+			Print(msg, Yellow)
+		} else {
+			// test for cachebuster, if the cache doesnt always return a miss
+			if !alwaysMiss {
+				// Check first if a parameter can be used as cachebuster
 				if !cache.CBwasFound {
-					errs := cachebusterParameter(&cache, parameterList)
+					errs := cachebusterParameter(&cache, nil)
 					if len(errs) > 0 {
 						errSlice = append(errSlice, errs...)
 					}
 				}
 
-				// Check fivth if a header can be used as cachebuster
+				// Check second if a header can be used as cachebuster
 				if !cache.CBwasFound {
-					errs := cachebusterHeader(&cache, headerList)
+					errs := cachebusterHeader(&cache, nil)
+					if len(errs) > 0 {
+						errSlice = append(errSlice, errs...)
+					}
+				}
+
+				// Check third if a cookie can be used as cachebuster
+				if !cache.CBwasFound {
+					errs := cachebusterCookie(&cache)
+					if len(errs) > 0 {
+						errSlice = append(errSlice, errs...)
+					}
+				}
+
+				if Config.SkipWordlistCachebuster {
+					msg := "Skipping wordlist cachebuster tests\n"
+					PrintVerbose(msg, Yellow, 1)
+				} else {
+					// Check fourth if a parameter from the wordlist can be used as cachebuster
+					if !cache.CBwasFound {
+						errs := cachebusterParameter(&cache, parameterList)
+						if len(errs) > 0 {
+							errSlice = append(errSlice, errs...)
+						}
+					}
+
+					// Check fivth if a header can be used as cachebuster
+					if !cache.CBwasFound {
+						errs := cachebusterHeader(&cache, headerList)
+						if len(errs) > 0 {
+							errSlice = append(errSlice, errs...)
+						}
+					}
+				}
+
+				// Check last if a HTTP Method can be used as cachebuster. Can't do multithreading if HTTP Method is used
+				if !cache.CBwasFound {
+					errs := cachebusterHTTPMethod(&cache)
 					if len(errs) > 0 {
 						errSlice = append(errSlice, errs...)
 					}
 				}
 			}
-
-			// Check last if a HTTP Method can be used as cachebuster. Can't do multithreading if HTTP Method is used
-			if !cache.CBwasFound {
-				errs := cachebusterHTTPMethod(&cache)
-				if len(errs) > 0 {
-					errSlice = append(errSlice, errs...)
-				}
-			}
 		}
-	}
 
-	if cache.Indicator == "" && !cache.TimeIndicator {
-		msg := "No cache indicator could be found"
-		Print(msg+"\n", Yellow)
-		errSlice = append(errSlice, errors.New(strings.ToLower(msg)))
-	} else {
-		if !cache.CBwasFound {
-			msg := "No cachebuster could be found"
+		if cache.Indicator == "" && !cache.TimeIndicator {
+			msg := "No cache indicator could be found"
 			Print(msg+"\n", Yellow)
 			errSlice = append(errSlice, errors.New(strings.ToLower(msg)))
+		} else {
+			if !cache.CBwasFound {
+				msg := "No cachebuster could be found"
+				Print(msg+"\n", Yellow)
+				errSlice = append(errSlice, errors.New(strings.ToLower(msg)))
+			}
 		}
-	}
 
-	if (!cache.CBwasFound || (cache.Indicator == "" && !cache.TimeIndicator)) && !Config.Force {
-		msg := "Use -f/-force to force the test\n"
-		Print(msg, Yellow)
-	}
+		if (!cache.CBwasFound || (cache.Indicator == "" && !cache.TimeIndicator)) && !Config.Force {
+			msg := "Use -f/-force to force the test\n"
+			Print(msg, Yellow)
+		}
 
+	}
 	return cache, alwaysMiss, errSlice
 }
 
-func checkIfAlwaysMiss(cache CacheStruct) (bool, error) {
+func checkIfAlwaysMiss(cacheIndicator string) (bool, error) {
 	errorString := "checkIfAlwaysMiss"
 
 	req := fasthttp.AcquireRequest()
@@ -193,7 +200,7 @@ func checkIfAlwaysMiss(cache CacheStruct) (bool, error) {
 	timeDiff := secondUnix - firstUnix
 	// make sure that there is at least 2 sec difference.
 	// So that first req has Age=0 and second req has Age>=2
-	if timeDiff <= 1 && strings.EqualFold("age", cache.Indicator) {
+	if timeDiff <= 1 && strings.EqualFold("age", cacheIndicator) {
 		time.Sleep(2 * time.Second)
 	}
 
@@ -211,9 +218,9 @@ func checkIfAlwaysMiss(cache CacheStruct) (bool, error) {
 
 	respHeader := headerToMultiMap(&resp.Header)
 	hit := false
-	for _, v := range respHeader[cache.Indicator] {
+	for _, v := range respHeader[cacheIndicator] {
 		indicValue := strings.TrimSpace(strings.ToLower(v))
-		hit = hit || checkCacheHit(indicValue, cache.Indicator)
+		hit = hit || checkCacheHit(indicValue, cacheIndicator)
 	}
 
 	if !hit {

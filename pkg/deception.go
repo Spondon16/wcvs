@@ -83,7 +83,6 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 	defer fasthttp.ReleaseRequest(req)
 	defer fasthttp.ReleaseResponse(resp)
 	var err error
-	var body []byte
 
 	rUrl := Config.Website.Url.String()
 	// Überprüfen, ob der String genau zwei `//` enthält
@@ -105,7 +104,7 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 
 	waitLimiter("Web Cache Deception")
 
-	if resp.StatusCode() != Config.Website.StatusCode || string(body) != Config.Website.Body {
+	if resp.StatusCode() != Config.Website.StatusCode || string(resp.Body()) != Config.Website.Body {
 		return nil // no cache deception, as the response is not the same as the original one
 	}
 
@@ -132,19 +131,26 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 	repCheck.Request.CurlCommand = command.String()
 	PrintVerbose("Curl command: "+repCheck.Request.CurlCommand+"\n", NoColor, 2)
 
+	var cacheIndicators []string
 	if Config.Website.Cache.Indicator == "" { // check if now a cache indicator exists
-		cache := analyzeCacheIndicator(respHeader)
-		Config.Website.Cache.Indicator = cache.Indicator
+		cacheIndicators = analyzeCacheIndicator(respHeader)
+	} else {
+		cacheIndicators = []string{Config.Website.Cache.Indicator}
 	}
 
 	hit := false
-	for _, v := range respHeader[Config.Website.Cache.Indicator] {
-		indicValue := strings.TrimSpace(strings.ToLower(v))
-		hit = hit || checkCacheHit(indicValue, Config.Website.Cache.Indicator)
+	for _, indicator := range cacheIndicators {
+		for _, v := range respHeader[indicator] {
+			indicValue := strings.TrimSpace(strings.ToLower(v))
+			if checkCacheHit(indicValue, Config.Website.Cache.Indicator) {
+				hit = true
+				Config.Website.Cache.Indicator = indicator
+			}
+		}
 	}
 
 	// check if there's a cache hit and if the body didn't change (otherwise it could be a cached error page, for example)
-	if hit && string(body) == Config.Website.Body {
+	if hit && string(resp.Body()) == Config.Website.Body && resp.StatusCode() == Config.Website.StatusCode {
 		repResult.Vulnerable = true
 		repCheck.Reason = "The response got cached due to Web Cache Deception"
 		msg = fmt.Sprintf("%s was successfully decepted! appended: %s\n", rUrl, appendStr)
