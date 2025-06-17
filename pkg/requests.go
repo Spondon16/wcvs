@@ -305,7 +305,7 @@ func firstRequest(rp requestParams) (body []byte, respStatusCode int, repRequest
 
 	// Add response without body to report
 	resp.SkipBody = true
-	repRequest.Response = string(resp.Body())
+	repRequest.Response = string(resp.String())
 
 	return body, resp.StatusCode(), repRequest, respHeaders, nil
 }
