@@ -27,6 +27,7 @@ type (
 		SkipWordlistCachebuster bool
 		CacheHeader             string
 		DisableColor            bool
+		DisableStatusLine       bool
 		IgnoreStatus            []int
 
 		Recursivity int

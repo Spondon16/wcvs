@@ -82,7 +82,9 @@ func ParseFlags(vers string) {
 	appendString(&generalOptions, &Config.CacheHeader,
 		"cacheheader", "ch", "", "Specify a custom cache header")
 	appendBoolean(&generalOptions, &Config.DisableColor,
-		"nocolor", "nc", false, "Disable color output")
+		"nocolor", "nc", false, "Disable colored output")
+	appendBoolean(&generalOptions, &Config.DisableStatusLine,
+		"nostatusline", "ns", false, "Disable status line output")
 
 	// Generate Options
 	appendString(&generateOptions, &Config.GeneratePath,
