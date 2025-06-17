@@ -1,5 +1,5 @@
 # ignore Log, Completed, Report
-*_WCVS_*
+WCVS_*
 # ignore the url list file
 urls.list
 # ignore test folder
