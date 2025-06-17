@@ -246,6 +246,7 @@ func removeParam(rawURL string, paramToRemove string) (string, string, error) {
 
 	// Get current query parameters
 	query := parsedURL.Query()
+	ogValue := query.Get(paramToRemove)
 
 	// Check if the parameter exists and remove it
 	if _, exists := query[paramToRemove]; exists {
@@ -253,7 +254,7 @@ func removeParam(rawURL string, paramToRemove string) (string, string, error) {
 		parsedURL.RawQuery = query.Encode()
 	}
 
-	return parsedURL.String(), query.Get(paramToRemove), nil
+	return parsedURL.String(), ogValue, nil
 }
 
 /* Create a random long integer */

@@ -15,7 +15,7 @@ import (
 var impactfulQueries []string
 var unkeyedQueries []string
 
-const NOOGPARAM = ""
+const NOOGPARAM = "NoOGParameter"
 
 func init() {
 }
@@ -94,7 +94,7 @@ func ScanForwardingHeaders() reportResult {
 	}
 	port := strconv.Itoa(portInt)
 
-	values := []string{":" + port, ":@" + port, " " + port}
+	values := []string{Config.Website.Url.Host + ":" + port, Config.Website.Url.Host + ":@" + port, Config.Website.Url.Host + " " + port, Config.Website.Url.Host + ".p" + randInt(), "p" + randInt() + "." + Config.Website.Url.Host}
 	for _, value := range values {
 		PrintVerbose("Port-Number "+strconv.Itoa(portInt)+" was already present in websites response. Adding 1 to it.\n", NoColor, 2)
 		ForwardHeadersTemplate(&repResult, []string{header}, []string{value}, header, value, false)
@@ -369,6 +369,7 @@ func ScanParameters(parameterList []string) reportResult {
 				ogParam:          parameter + "=" + ogValue,
 				url:              rUrl,
 				cb:               cb,
+				technique:        "parameter",
 				success:          success,
 				bodyString:       "",
 				forcePost:        false,
@@ -784,6 +785,7 @@ func ScanParameterPollution() reportResult {
 				poison:           poison,
 				url:              url,
 				cb:               cb,
+				ogParam:          s + "=" + ogValue,
 				prependCB:        prependCB,
 				success:          success,
 				bodyString:       "",
@@ -896,6 +898,7 @@ func ScanParameterEncoding() reportResult {
 				poison:           poison,
 				url:              url,
 				cb:               cb,
+				ogParam:          s + "=" + ogValue,
 				prependCB:        prependCB,
 				success:          success,
 				bodyString:       "",
@@ -939,14 +942,11 @@ func DOS() reportResult {
 	var repResult reportResult
 	repResult.Technique = "DOS"
 
-	// TODO: Ist nur Header Value oder auch Header Name ausschlaggebend?
 	hho(&repResult)
 
 	// HMC (Header Metachar Character)
-	// TODO: Check for more META CHARACTERS?
-	//TODO: Change to other header, which is probably whitelisted
 	headers := []string{"X-Metachar-Header"}
-	values := []string{"n\nn", "r\rr", "a\aa", "x00\x00x00", "b\bb", "x1b\x1bx1b", "v\vv", "f\ff", "u0000\u0000u0000"}
+	values := []string{"n\nn", "r\rr", "a\aa", "x00\x00x00", "b\bb", "x1b\x1bx1b", "v\vv", "f\ff", "u0000\u0000u0000"} // TODO put not functional meta chars, due to fasthttp header value restrictions, in the value using \r\n in the header name
 
 	for _, header := range headers {
 		headerDOSTemplate(&repResult, values, header, "HMC ", true)

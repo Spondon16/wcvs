@@ -253,11 +253,10 @@ func firstRequest(rp requestParams) (body []byte, respStatusCode int, repRequest
 			Print(msg, Red)
 			break
 		}
-		if strings.EqualFold(rp.headers[i], "Host") && !rp.duplicateHeaders { // TODO wenn duplicate true dann setzen
-			newHost := string(req.Host()) + rp.values[i]
-			msg := fmt.Sprintf("Overwriting Host:%s with Host:%s\n", req.Host(), newHost)
+		if strings.EqualFold(rp.headers[i], "Host") && !rp.duplicateHeaders { // TODO add host header duplicate via \r\n in req.Header.SetHost
+			msg := fmt.Sprintf("Overwriting Host:%s with Host:%s\n", req.Host(), rp.values[i])
 			PrintVerbose(msg, NoColor, 2)
-			req.Header.SetHost(newHost)
+			req.Header.SetHost(rp.values[i])
 		} else if rp.headers[i] != "" {
 			if h := req.Header.Peek(rp.headers[i]); h != nil {
 				if !rp.duplicateHeaders {
@@ -325,13 +324,7 @@ func firstRequest(rp requestParams) (body []byte, respStatusCode int, repRequest
 
 func secondRequest(rpFirst requestParams) ([]byte, int, reportRequest, map[string][]string, error) {
 	var parameter []string
-	if rpFirst.technique == "pollution" {
-		for _, param := range rpFirst.parameters {
-			if strings.Contains(param, "=foobar") {
-				parameter = append(parameter, param)
-			}
-		}
-	} else if rpFirst.technique == "Parameters" && rpFirst.ogParam != "" {
+	if !strings.Contains(rpFirst.ogParam, NOOGPARAM) { // Only add original parameter if it existed
 		parameter = append(parameter, rpFirst.ogParam)
 	}
 
