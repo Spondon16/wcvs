@@ -3,7 +3,6 @@ package pkg
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"slices"
 	"strconv"
@@ -251,8 +250,6 @@ func ScanHeaders(headerList []string) reportResult {
 			wg.Done()
 			continue
 		}
-
-		header = http.CanonicalHeaderKey(header)
 
 		go func(i int, header string) {
 			defer wg.Done()

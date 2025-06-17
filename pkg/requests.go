@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/valyala/fasthttp"
+	"github.com/valyala/fasthttp/fasthttpproxy"
 	"github.com/xplorfin/fasthttp2curl"
 )
 
@@ -195,6 +197,7 @@ func firstRequest(rp requestParams) (body []byte, respStatusCode int, repRequest
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(req)
 	defer fasthttp.ReleaseResponse(resp)
+	req.Header.DisableNormalizing()
 
 	var msg string
 
@@ -273,6 +276,16 @@ func firstRequest(rp requestParams) (body []byte, respStatusCode int, repRequest
 	waitLimiter(rp.identifier)
 
 	repRequest.Request = req.String()
+
+	dialer := fasthttpproxy.FasthttpHTTPDialer("127.0.0.1:8080")
+	client := &fasthttp.Client{
+		Dial:                          dialer,
+		ReadTimeout:                   30 * time.Second,
+		WriteTimeout:                  30 * time.Second,
+		DisableHeaderNamesNormalizing: true,
+		DisablePathNormalizing:        true,
+		TLSConfig:                     &tls.Config{InsecureSkipVerify: true},
+	}
 
 	// Do request
 	err = client.Do(req, resp)

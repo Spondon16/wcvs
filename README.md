@@ -175,16 +175,13 @@ wcvs -u https://example.com -r 5 -rex /home/user/Documents/donttest.txt
 ```
 
 ## Use a Proxy
-To use a proxy, a CA certificate of the proxy in PEM format is needed.
-Burp Suite certificates are provided in DER format, for example. To convert them, the following command can be used:
-`openssl x509 -inform DER -outform PEM -text -in cacert.der -out cacert.pem`.
-The path to the certificate can be specified with `--proxycertpath/-ppath`.
+To use a proxy, specify `--useproxy/-up`. If you are using Burp, make sure to uncheck *"Settings > Network > HTTP > HTTP/2 > Default to HTTP/2 if the server supports it"*. Otherwise some techniques, which rely on non-RFC-compliant headers, will not work.
 The default URL for the proxy is `http://127.0.0.1:8080`. In order to change it, use `--proxyurl/-purl`.
 
 ### Examples:
 ```
-wcvs -u https://example.com -ppath /home/user/Documents/cacert.pem
-wcvs -u https://example.com -ppath /home/user/Documents/cacert.pem -purl http://127.0.0.1:8081
+wcvs -u https://example.com -up
+wcvs -u https://example.com -up -purl http://127.0.0.1:8081
 ```
 
 ## Throttle or Accelerate
