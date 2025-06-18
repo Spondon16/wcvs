@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,7 +11,6 @@ import (
 	"time"
 
 	"github.com/valyala/fasthttp"
-	"github.com/valyala/fasthttp/fasthttpproxy"
 	"github.com/xplorfin/fasthttp2curl"
 )
 
@@ -43,9 +41,6 @@ type requestParams struct {
 	m                *sync.Mutex
 }
 
-func init() {
-}
-
 func getRespSplit() string {
 	return "\\r\\n" + respSplitHeader + ": " + respSplitValue
 }
@@ -64,11 +59,14 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 	}
 
 	if repCheck.Reason == "" {
+		// check for reflrection in body
 		if poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && poison != "1" && strings.Contains(body, poison) { // dont check for reflection of http/https/nothttps (used by forwarded headers), 1 (used by DOS) or empty poison
 			repCheck.Reason = fmt.Sprintf("Response Body contained poison value %s %d times", poison, strings.Count(body, poison))
 			repCheck.Occurrences = findOccurrencesWithContext(body, poison, 25)
+			// check for reflection in headers
 		} else if len(headersWithPoison) > 0 {
 			repCheck.Reason = fmt.Sprintf("Response Header(s) %s contained poison value %s", strings.Join(headersWithPoison, ", "), poison)
+			// check for different status code
 		} else if statusCode1 >= 0 && statusCode1 != Config.Website.StatusCode && statusCode1 == statusCode2 {
 			// check if status code should be ignored
 			for _, status := range Config.IgnoreStatus {
@@ -84,7 +82,7 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 
 				// try up to 3 times
 				count := 3
-				for i := 0; i < count; i++ {
+				for i := range count {
 					Print(fmt.Sprintln("Status Code", statusCode1, "differed from the default", Config.Website.StatusCode, ", sending verification request", i+1, "from up to 3"), Yellow)
 					tmpWebsite, err = GetWebsite(Config.Website.Url.String(), true, true)
 					if err == nil {
@@ -103,6 +101,7 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 			} else {
 				repCheck.Reason = fmt.Sprintf("Status Code %d differed from %d", statusCode1, Config.Website.StatusCode)
 			}
+			// check for different body length
 		} else if Config.CLDiff != 0 && success != "" && sameBodyLength && len(body) > 0 && compareLengths(len(body), len(Config.Website.Body), Config.CLDiff) {
 			if !recursive {
 				var tmpWebsite WebsiteStruct
@@ -110,7 +109,7 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 
 				// try up to 3 times
 				count := 3
-				for i := 0; i < count; i++ {
+				for range count {
 					tmpWebsite, err = GetWebsite(Config.Website.Url.String(), true, true)
 					if err == nil {
 						break
@@ -243,6 +242,7 @@ func firstRequest(rp requestParams) (body []byte, respStatusCode int, repRequest
 	req.SetRequestURI(rp.url)
 
 	setRequest(req, Config.DoPost, rp.cb, rp.newCookie, rp.prependCB)
+	repRequest.Request = req.String()
 
 	for i := range rp.headers {
 		if rp.headers[i] == "" {
@@ -271,20 +271,7 @@ func firstRequest(rp requestParams) (body []byte, respStatusCode int, repRequest
 			}
 		}
 	}
-
 	waitLimiter(rp.identifier)
-
-	repRequest.Request = req.String()
-
-	dialer := fasthttpproxy.FasthttpHTTPDialer("127.0.0.1:8080")
-	client := &fasthttp.Client{
-		Dial:                          dialer,
-		ReadTimeout:                   30 * time.Second,
-		WriteTimeout:                  30 * time.Second,
-		DisableHeaderNamesNormalizing: true,
-		DisablePathNormalizing:        true,
-		TLSConfig:                     &tls.Config{InsecureSkipVerify: true},
-	}
 
 	// Do request
 	err = client.Do(req, resp)
@@ -341,9 +328,8 @@ func secondRequest(rpFirst requestParams) ([]byte, int, reportRequest, map[strin
 	return body, statusCode, repRequest, header, err
 }
 
-// TODO: ResponseSplitting Methode
-/* return value:first bool is needed for responsesplitting, second bool is only needed for ScanParameters */
-func issueRequest(rp requestParams) (respsplit []string, impact bool, unkeyed bool) {
+/* return values:first bool is needed for responsesplitting, second bool is only needed for ScanParameters */
+func issueRequests(rp requestParams) (respsplit []string, impact bool, unkeyed bool) {
 	var repCheck reportCheck
 	repCheck.Identifier = rp.identifier
 	repCheck.URL = rp.url
@@ -384,19 +370,19 @@ func issueRequest(rp requestParams) (respsplit []string, impact bool, unkeyed bo
 	repCheck.SecondRequest = &repRequest
 	sameBodyLength := len(body1) == len(body2)
 
-	// Lock here, to prevent false positives and too many GetWebsite requests
-
-	if rp.m != nil {
-		rp.m.Lock()
-		defer rp.m.Unlock()
-	}
-	responseSplittingHeaders := checkPoisoningIndicators(rp.repResult, repCheck, rp.success, string(body2), rp.poison, statusCode1, statusCode2, sameBodyLength, respHeader, false)
-
+	// Check for cache hit
 	hit := false
 	for _, v := range respHeader[Config.Website.Cache.Indicator] {
 		indicValue := strings.TrimSpace(strings.ToLower(v))
 		hit = hit || checkCacheHit(indicValue, Config.Website.Cache.Indicator)
 	}
+
+	// Lock here, to prevent false positives and too many GetWebsite requests
+	if rp.m != nil {
+		rp.m.Lock()
+		defer rp.m.Unlock()
+	}
+	responseSplittingHeaders := checkPoisoningIndicators(rp.repResult, repCheck, rp.success, string(body2), rp.poison, statusCode1, statusCode2, sameBodyLength, respHeader, false)
 
 	return responseSplittingHeaders, impactful, hit
 }

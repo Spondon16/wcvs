@@ -58,7 +58,7 @@ func ScanCookies() reportResult {
 			m:                nil,
 			newCookie:        newCookie,
 		}
-		responseSplittingHeaders, _, _ := issueRequest(rp)
+		responseSplittingHeaders, _, _ := issueRequests(rp)
 
 		// check for response splitting, if poison was reflected in a header
 		for _, responseSplittingHeader := range responseSplittingHeaders {
@@ -74,7 +74,7 @@ func ScanCookies() reportResult {
 			msg = fmt.Sprintf("Overwriting %s=%s with %s=%s\n", k, v, k, rp.poison)
 			Print(msg, NoColor)
 
-			issueRequest(rp)
+			issueRequests(rp)
 		}
 	}
 	return repResult
@@ -162,7 +162,7 @@ func ForwardHeadersTemplate(repResult *reportResult, headers []string, values []
 		duplicateHeaders: duplicateHeaders,
 		m:                nil,
 	}
-	responseSplittingHeaders, _, _ := issueRequest(rp)
+	responseSplittingHeaders, _, _ := issueRequests(rp)
 
 	// check for response splitting, if poison was reflected in a header
 	for _, responseSplittingHeader := range responseSplittingHeaders {
@@ -176,7 +176,7 @@ func ForwardHeadersTemplate(repResult *reportResult, headers []string, values []
 		rp.success = fmt.Sprintf("%s successfully poisoned the header %s with Response Splitting! cachebuster %s: %s poison: %s\n", headers, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.values)
 		rp.identifier += " response splitting"
 
-		issueRequest(rp)
+		issueRequests(rp)
 	}
 }
 
@@ -279,7 +279,7 @@ func ScanHeaders(headerList []string) reportResult {
 				duplicateHeaders: false,
 				m:                &m,
 			}
-			responseSplittingHeaders, _, _ := issueRequest(rp)
+			responseSplittingHeaders, _, _ := issueRequests(rp)
 
 			// check for response splitting, if poison was reflected in a header
 			for _, responseSplittingHeader := range responseSplittingHeaders {
@@ -292,7 +292,7 @@ func ScanHeaders(headerList []string) reportResult {
 				rp.success = fmt.Sprintf("Header %s successfully poisoned the header %s with Response Splitting! cachebuster %s: %s poison: %s\n", header, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.poison)
 				rp.identifier += " response splitting"
 
-				issueRequest(rp)
+				issueRequests(rp)
 			}
 		}(i, header)
 
@@ -376,7 +376,7 @@ func ScanParameters(parameterList []string) reportResult {
 				duplicateHeaders: false,
 				m:                &m,
 			}
-			responseSplittingHeaders, impactful, unkeyed := issueRequest(rp)
+			responseSplittingHeaders, impactful, unkeyed := issueRequests(rp)
 
 			if impactful && !unkeyed {
 				impactfulQueries = append(impactfulQueries, parameter)
@@ -395,7 +395,7 @@ func ScanParameters(parameterList []string) reportResult {
 				rp.cb = "cb" + randInt()
 				rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting! cachebuster %s: %s poison: %s\n", parameter, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.poison)
 				rp.identifier += " response splitting"
-				issueRequest(rp)
+				issueRequests(rp)
 			}
 		}(i, parameter)
 
@@ -485,7 +485,7 @@ func ScanFatGET() reportResult {
 					duplicateHeaders: false,
 					m:                &m,
 				}
-				responseSplittingHeaders, _, _ := issueRequest(rp)
+				responseSplittingHeaders, _, _ := issueRequests(rp)
 
 				// check for response splitting, if poison was reflected in a header
 				for _, responseSplittingHeader := range responseSplittingHeaders {
@@ -499,7 +499,7 @@ func ScanFatGET() reportResult {
 					rp.identifier += " response splitting"
 					rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s via %s with Response Splitting! cachebuster %s: %s poison:%s\n", s, responseSplittingHeader, identifier, Config.Website.Cache.CBName, rp.cb, rp.poison)
 
-					issueRequest(rp)
+					issueRequests(rp)
 				}
 			}(i, s, poison)
 		}
@@ -687,7 +687,7 @@ func ScanParameterCloaking() reportResult {
 					m:                &m,
 					newCookie:        nil,
 				}
-				responseSplittingHeaders, _, _ := issueRequest(rp)
+				responseSplittingHeaders, _, _ := issueRequests(rp)
 
 				// check for response splitting, if poison was reflected in a header
 				for _, responseSplittingHeader := range responseSplittingHeaders {
@@ -701,7 +701,7 @@ func ScanParameterCloaking() reportResult {
 					rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting using %s with Parameter Cloaking! cachebuster %s:%s poison:%s\n", s, responseSplittingHeader, u, Config.Website.Cache.CBName, rp.cb, rp.poison)
 					rp.identifier += " response splitting"
 
-					issueRequest(rp)
+					issueRequests(rp)
 				}
 			}(iu, u, is, s, poison)
 		}
@@ -794,7 +794,7 @@ func ScanParameterPollution() reportResult {
 				m:                &m,
 				newCookie:        nil,
 			}
-			responseSplittingHeaders, _, _ := issueRequest(rp)
+			responseSplittingHeaders, _, _ := issueRequests(rp)
 
 			// check for response splitting, if poison was reflected in a header
 			for _, responseSplittingHeader := range responseSplittingHeaders {
@@ -815,7 +815,7 @@ func ScanParameterPollution() reportResult {
 				rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting with Parameter Pollution! cachebuster %s:%s poison:%s\n", s, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.poison)
 				rp.identifier += " response splitting"
 
-				issueRequest(rp)
+				issueRequests(rp)
 			}
 		}(is, s, poison, is >= len(impactfulQueries)/2)
 	}
@@ -907,7 +907,7 @@ func ScanParameterEncoding() reportResult {
 				m:                &m,
 				newCookie:        nil,
 			}
-			responseSplittingHeaders, _, _ := issueRequest(rp)
+			responseSplittingHeaders, _, _ := issueRequests(rp)
 
 			// check for response splitting, if poison was reflected in a header
 			for _, responseSplittingHeader := range responseSplittingHeaders {
@@ -928,7 +928,7 @@ func ScanParameterEncoding() reportResult {
 				rp.success = fmt.Sprintf("Query Parameter %s successfully poisoned the header %s with Response Splitting with Parameter Encoding! cachebuster %s:%s poison:%s\n", s, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.poison)
 				rp.identifier += " response splitting"
 
-				issueRequest(rp)
+				issueRequests(rp)
 			}
 		}(is, s, poison, is >= len(impactfulQueries)/2)
 	}
@@ -1076,7 +1076,7 @@ func hho(repResult *reportResult) {
 				m:          &m,
 			}
 
-			_, _, _ = issueRequest(rp)
+			_, _, _ = issueRequests(rp)
 		}(repetition)
 	}
 
@@ -1126,7 +1126,7 @@ func headerDOSTemplate(repResult *reportResult, values []string, header string, 
 				m:                &m,
 				newCookie:        nil,
 			}
-			responseSplittingHeaders, _, _ := issueRequest(rp)
+			responseSplittingHeaders, _, _ := issueRequests(rp)
 
 			// check for response splitting, if poison was reflected in a header
 			for _, responseSplittingHeader := range responseSplittingHeaders {
@@ -1139,7 +1139,7 @@ func headerDOSTemplate(repResult *reportResult, values []string, header string, 
 				rp.success = fmt.Sprintf("%sDOS with header %s successfully poisoned the header %s with Response Splitting! cachebuster %s: %s poison: %s\n", msgextra, header, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb, rp.values[0])
 				rp.identifier += getRespSplit() + " with response splitting"
 
-				issueRequest(rp)
+				issueRequests(rp)
 			}
 		}(value, httpConform)
 	}
