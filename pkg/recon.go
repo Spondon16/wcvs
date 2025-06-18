@@ -1406,8 +1406,10 @@ func CrawlUrls(u string, added map[string]bool, excluded map[string]bool) []stri
 	}
 
 	// redirect
-	if h := webStruct.Headers["Location"][0]; h != "" {
-		urls = addUrl(urls, h, added, excluded)
+	if webStruct.Headers["Location"] != nil {
+		if h := webStruct.Headers["Location"][0]; h != "" {
+			urls = addUrl(urls, h, added, excluded)
+		}
 	}
 
 	return urls

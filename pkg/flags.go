@@ -165,15 +165,14 @@ func ParseFlags(vers string) {
 	if Config.DisableColor {
 		color.NoColor = true
 	}
+	fmt.Printf(getLogo()+"\nWCVS - the Web Cache Vulnerability Scanner. (v%s)"+"\n\n", version)
 
 	/* Checking values of Flags */
 	if len(flag.Args()) > 0 {
-		fmt.Printf(getLogo()+"\nWCVS - the Web Cache Vulnerability Scanner. (v%s)"+"\n\n", version)
 		msg := fmt.Sprintf("%s: Args are not supported! Use flags. Use -h or --help to get a list of all supported flags\n", flag.Args())
 		PrintFatal(msg)
 	}
 	if urlStr == "" {
-		fmt.Printf(getLogo()+"\nWCVS - the Web Cache Vulnerability Scanner. (v%s)"+"\n\n", version)
 		msg := "No url specified. Use -url or -u. Use -h or --help to get a list of all supported flags\n"
 		PrintFatal(msg)
 	}
