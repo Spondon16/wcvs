@@ -983,7 +983,7 @@ func DOS() reportResult {
 
 	// DOS via Max-Forwards (Webserver/Cache returns request)
 	values = []string{"0", "1", "2"}
-	headerDOSTemplate(&repResult, values, "Max-Forwards", "max-forwards ", true)
+	headerDOSTemplate(&repResult, values, "Max-Forwards", "", true)
 
 	// DOS via waf blocking because of a blacklist word
 	// TODO: change header to probably whitelisted header, More Blacklist words?
@@ -991,20 +991,24 @@ func DOS() reportResult {
 	headerDOSTemplate(&repResult, values, "Any-Header", "blacklist ", true)
 
 	// DOS via Range
-	values = []string{"bytes=cow"}
+	values = []string{"bytes=m10x", "bytes=9-4", "bytes=-1024,0", "bytes=0-,0-,0-,0-"}
 	headerDOSTemplate(&repResult, values, "Range", "", true)
 
 	// DOS via X-Forwarded-Protocol
-	values = []string{"http", "https", "ssl", "nonsense"}
+	values = []string{"http", "https", "ssl", "m10x"}
 	headerDOSTemplate(&repResult, values, "X-Forwarded-Protocol", "", true)
 
-	// DOS via X-Forwarded-Protocol
-	values = []string{"http", "https", "nothttps", "nonsense"}
+	// DOS via X-Forwarded-Scheme
+	values = []string{"http", "https", "nothttps", "m10x"}
 	headerDOSTemplate(&repResult, values, "X-Forwarded-Scheme", "", true)
 
 	// DOS via X-Fordwarded-SSL
-	values = []string{"on", "off", "nonsense"}
+	values = []string{"on", "off", "m10x"}
 	headerDOSTemplate(&repResult, values, "X-Forwarded-SSL", "", true)
+
+	// DOS via Upgrade
+	values = []string{"HTTP/0.9", "Websocket, RTA/x11", "HTTP/2.0, SHTTP/1.3, IRC/6.9", "m10x"}
+	headerDOSTemplate(&repResult, values, "Upgrade", "", true)
 
 	// DOS via invalid Content-Type
 	values = []string{"m10x"}
