@@ -330,6 +330,10 @@ func checkCacheHit(value string, indicator string) bool {
 				return true
 			}
 		}
+	} else if strings.EqualFold("x-cc-via", indicator) {
+		if strings.Contains(indicator, "[H,") {
+			return true
+		}
 		// Some Headers may have "miss,hit" or "hit,miss" as value. But both are cached responses.
 	} else if strings.Contains(strings.ToLower(value), "hit") || strings.Contains(strings.ToLower(value), "cached") {
 		return true
@@ -380,7 +384,7 @@ func analyzeCacheIndicator(headers http.Header) (indicators []string) {
 		case "cache-control", "pragma", "vary", "expires":
 			msg := fmt.Sprintf("%s header was found: %s \n", key, val)
 			PrintVerbose(msg, Cyan, 1)
-		case "x-cache", "cf-cache-status", "x-drupal-cache", "x-varnish-cache", "akamai-cache-status", "server-timing", "x-iinfo", "x-nc", "x-hs-cf-cache-status", "x-proxy-cache", "x-cache-hits", "x-cache-status", "x-cache-info", "x-rack-cache", "cdn_cache_status", "x-akamai-cache", "x-akamai-cache-remote", "x-cache-remote", "x-litespeed-cache", "x-kinsta-cache", "x-ac", "cache-status", "ki-cf-cache-status", "eo-cache-status", customCacheHeader:
+		case "x-cache", "cf-cache-status", "x-drupal-cache", "x-varnish-cache", "akamai-cache-status", "server-timing", "x-iinfo", "x-nc", "x-hs-cf-cache-status", "x-proxy-cache", "x-cache-hits", "x-cache-status", "x-cache-info", "x-rack-cache", "cdn_cache_status", "cache_status", "x-akamai-cache", "x-akamai-cache-remote", "x-cache-remote", "x-litespeed-cache", "x-kinsta-cache", "x-ac", "cache-status", "ki-cf-cache-status", "eo-cache-status", "x-77-cache", "x-cache-lookup", "x-cc-via", customCacheHeader:
 			// CacheHeader flag might not be set (=> ""). Continue in this case
 			if key == "" {
 				continue
