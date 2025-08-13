@@ -47,89 +47,121 @@ func getRespSplit() string {
 	return "\\r\\n" + RESP_SPLIT_HEADER + ": " + RESP_SPLIT_VALUE
 }
 
+func getHeaderReflections(header http.Header, headersWithPoison []string) []string {
+	var parts []string
+	for _, name := range headersWithPoison {
+		if val, ok := header[name]; ok {
+			// strings.Join if a header has multiple values
+			parts = append(parts, fmt.Sprintf("%s: %s", name, strings.Join(val, ",")))
+		}
+	}
+	return parts
+}
+
 func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, success string, body string, poison string, statusCode1 int, statusCode2 int, sameBodyLength bool, header http.Header, recursive bool) []string {
 	headersWithPoison := []string{}
-	if strings.Contains(Config.ReasonTypes, "header") && header != nil && poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && poison != "1" { // dont check for reflection of http/https/nothttps (used by forwarded headers), 1 (used by DOS) or empty poison
+	// Response splitting check
+	if strings.Contains(repCheck.Identifier, "response splitting") {
 		for x := range header {
 			if x == RESP_SPLIT_HEADER && header.Get(x) == RESP_SPLIT_VALUE {
 				repCheck.Reason = "HTTP Response Splitting"
-			}
-			if strings.Contains(header.Get(x), poison) {
-				headersWithPoison = append(headersWithPoison, x)
+				break
 			}
 		}
-	}
+		if repCheck.Reason == "" {
+			return headersWithPoison // no response splitting header found, return empty slice
+		}
+		// Other checks
+	} else {
 
-	if repCheck.Reason == "" {
-		// check for reflection in body
-		if strings.Contains(Config.ReasonTypes, "body") && poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && poison != "1" && strings.Contains(body, poison) { // dont check for reflection of http/https/nothttps (used by forwarded headers), 1 (used by DOS) or empty poison
-			repCheck.Reason = fmt.Sprintf("Reflection Body: Response Body contained poison value %s %d times", poison, strings.Count(body, poison))
-			repCheck.Occurrences = findOccurrencesWithContext(body, poison, 25)
-			// check for reflection in headers
-		} else if len(headersWithPoison) > 0 {
-			repCheck.Reason = fmt.Sprintf("Reflection Header: Response Header(s) %s contained poison value %s", strings.Join(headersWithPoison, ", "), poison)
-			// check for different status code
-		} else if strings.Contains(Config.ReasonTypes, "status") && statusCode1 >= 0 && statusCode1 != Config.Website.StatusCode && statusCode1 == statusCode2 {
-			// check if status code should be ignored
-			for _, status := range Config.IgnoreStatus {
-				if statusCode1 == status || Config.Website.StatusCode == status {
-					PrintVerbose("Skipped Status Code "+strconv.Itoa(status)+"\n", Cyan, 1) // TODO is it necessary to check if default status code changed?
-					return headersWithPoison
+		if strings.Contains(Config.ReasonTypes, "header") && header != nil && poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && poison != "1" { // dont check for reflection of http/https/nothttps (used by forwarded headers), 1 (used by DOS) or empty poison
+			for x := range header {
+				if x == RESP_SPLIT_HEADER && header.Get(x) == RESP_SPLIT_VALUE {
+					repCheck.Reason = "HTTP Response Splitting"
+				}
+				if strings.Contains(header.Get(x), poison) {
+					headersWithPoison = append(headersWithPoison, x)
 				}
 			}
+		}
 
-			if !recursive {
-				var tmpWebsite WebsiteStruct
-				var err error
-
-				// try up to 3 times
-				count := 3
-				for i := range count {
-					Print(fmt.Sprintln("Status Code", statusCode1, "differed from the default", Config.Website.StatusCode, ", sending verification request", i+1, "from up to 3"), Yellow)
-					tmpWebsite, err = GetWebsite(Config.Website.Url.String(), true, true)
-					if err == nil {
-						Print(fmt.Sprintln("The verification request returned the Status Code", tmpWebsite.StatusCode), Yellow)
-						break
+		if repCheck.Reason == "" {
+			// check for reflection in body
+			if strings.Contains(Config.ReasonTypes, "body") && poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && poison != "1" && strings.Contains(body, poison) { // dont check for reflection of http/https/nothttps (used by forwarded headers), 1 (used by DOS) or empty poison
+				if len(headersWithPoison) > 0 {
+					repCheck.Reason = fmt.Sprintf("Reflection Body and Header: Response Body contained poison value %s %d times and Response Header(s) %s contained poison value %s", poison, strings.Count(body, poison), strings.Join(headersWithPoison, ", "), poison)
+				} else {
+					repCheck.Reason = fmt.Sprintf("Reflection Body: Response Body contained poison value %s %d times", poison, strings.Count(body, poison))
+				}
+				repCheck.Reflections = findOccurrencesWithContext(body, poison, 25)
+				repCheck.Reflections = append(repCheck.Reflections, getHeaderReflections(header, headersWithPoison)...)
+				// check for reflection in headers
+			} else if len(headersWithPoison) > 0 {
+				repCheck.Reason = fmt.Sprintf("Reflection Header: Response Header(s) %s contained poison value %s", strings.Join(headersWithPoison, ", "), poison)
+				repCheck.Reflections = getHeaderReflections(header, headersWithPoison)
+				// check for different status code
+			} else if strings.Contains(Config.ReasonTypes, "status") && statusCode1 >= 0 && statusCode1 != Config.Website.StatusCode && statusCode1 == statusCode2 {
+				// check if status code should be ignored
+				for _, status := range Config.IgnoreStatus {
+					if statusCode1 == status || Config.Website.StatusCode == status {
+						PrintVerbose("Skipped Status Code "+strconv.Itoa(status)+"\n", Cyan, 1) // TODO is it necessary to check if default status code changed?
+						return headersWithPoison
 					}
 				}
-				if err != nil {
-					repResult.HasError = true
-					msg := fmt.Sprintf("%s: couldn't verify if status code %d is the new default status code, because the verification encountered the following error %d times: %s", repCheck.URL, statusCode1, count, err.Error())
-					repResult.ErrorMessages = append(repResult.ErrorMessages, msg)
-				} else {
-					Config.Website = tmpWebsite
-				}
-				return checkPoisoningIndicators(repResult, repCheck, success, body, poison, statusCode1, statusCode2, sameBodyLength, header, true)
-			} else {
-				repCheck.Reason = fmt.Sprintf("Changed Status Code: Status Code %d differed from %d", statusCode1, Config.Website.StatusCode)
-			}
-			// check for different body length
-		} else if strings.Contains(Config.ReasonTypes, "length") && Config.CLDiff != 0 && success != "" && sameBodyLength && len(body) > 0 && compareLengths(len(body), len(Config.Website.Body), Config.CLDiff) {
-			if !recursive {
-				var tmpWebsite WebsiteStruct
-				var err error
 
-				// try up to 3 times
-				count := 3
-				for range count {
-					tmpWebsite, err = GetWebsite(Config.Website.Url.String(), true, true)
-					if err == nil {
-						break
+				if !recursive {
+					var tmpWebsite WebsiteStruct
+					var err error
+
+					// try up to 3 times
+					count := 3
+					for i := range count {
+						Print(fmt.Sprintln("Status Code", statusCode1, "differed from the default", Config.Website.StatusCode, ", sending verification request", i+1, "from up to 3"), Yellow)
+						tmpWebsite, err = GetWebsite(Config.Website.Url.String(), true, true)
+						if err == nil {
+							Print(fmt.Sprintln("The verification request returned the Status Code", tmpWebsite.StatusCode), Yellow)
+							break
+						}
 					}
-				}
-				if err != nil {
-					repResult.HasError = true
-					msg := fmt.Sprintf("%s: couldn't verify if body length %d is the new default body length, because the verification request encountered the following error %d times: %s", repCheck.URL, statusCode1, count, err.Error())
-					repResult.ErrorMessages = append(repResult.ErrorMessages, msg)
+					if err != nil {
+						repResult.HasError = true
+						msg := fmt.Sprintf("%s: couldn't verify if status code %d is the new default status code, because the verification encountered the following error %d times: %s", repCheck.URL, statusCode1, count, err.Error())
+						repResult.ErrorMessages = append(repResult.ErrorMessages, msg)
+					} else {
+						Config.Website = tmpWebsite
+					}
+					return checkPoisoningIndicators(repResult, repCheck, success, body, poison, statusCode1, statusCode2, sameBodyLength, header, true)
 				} else {
-					Config.Website = tmpWebsite
+					repCheck.Reason = fmt.Sprintf("Changed Status Code: Status Code %d differed from %d", statusCode1, Config.Website.StatusCode)
 				}
-				return checkPoisoningIndicators(repResult, repCheck, success, body, poison, statusCode1, statusCode2, sameBodyLength, header, true)
+				// check for different body length
+			} else if strings.Contains(Config.ReasonTypes, "length") && Config.CLDiff != 0 && success != "" && sameBodyLength && len(body) > 0 && compareLengths(len(body), len(Config.Website.Body), Config.CLDiff) {
+				if !recursive {
+					var tmpWebsite WebsiteStruct
+					var err error
+
+					// try up to 3 times
+					count := 3
+					for range count {
+						tmpWebsite, err = GetWebsite(Config.Website.Url.String(), true, true)
+						if err == nil {
+							break
+						}
+					}
+					if err != nil {
+						repResult.HasError = true
+						msg := fmt.Sprintf("%s: couldn't verify if body length %d is the new default body length, because the verification request encountered the following error %d times: %s", repCheck.URL, statusCode1, count, err.Error())
+						repResult.ErrorMessages = append(repResult.ErrorMessages, msg)
+					} else {
+						Config.Website = tmpWebsite
+					}
+					return checkPoisoningIndicators(repResult, repCheck, success, body, poison, statusCode1, statusCode2, sameBodyLength, header, true)
+				} else {
+					repCheck.Reason = fmt.Sprintf("Changed Content Length: Length %d differed more than %d bytes from normal length %d", len(body), Config.CLDiff, len(Config.Website.Body))
+				}
 			} else {
-				repCheck.Reason = fmt.Sprintf("Changed Content Length: Length %d differed more than %d bytes from normal length %d", len(body), Config.CLDiff, len(Config.Website.Body))
+				return headersWithPoison
 			}
-		} else {
-			return headersWithPoison
 		}
 	}
 
@@ -139,6 +171,10 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 	Print(msg, Green)
 	msg = "Reason: " + repCheck.Reason + "\n"
 	Print(msg, Green)
+	if len(repCheck.Reflections) > 0 {
+		msg = "Reflections: " + strings.Join(repCheck.Reflections, " ... ") + "\n"
+		Print(msg, Green)
+	}
 	msg = "Curl 1st Request: " + repCheck.Request.CurlCommand + "\n"
 	Print(msg, Green)
 	msg = "Curl 2nd Request: " + repCheck.SecondRequest.CurlCommand + "\n\n"

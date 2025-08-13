@@ -20,7 +20,7 @@ type (
 		URL           string         `json:"-"`
 		Identifier    string         `json:"identifier"`
 		Reason        string         `json:"reason"`
-		Occurrences   []string       `json:"occurrences,omitempty"`
+		Reflections   []string       `json:"reflections,omitempty"`
 		Request       reportRequest  `json:"request"`
 		SecondRequest *reportRequest `json:"secondRequest,omitempty"`
 	}
