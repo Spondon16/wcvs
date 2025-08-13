@@ -63,11 +63,11 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 	if repCheck.Reason == "" {
 		// check for reflrection in body
 		if poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && poison != "1" && strings.Contains(body, poison) { // dont check for reflection of http/https/nothttps (used by forwarded headers), 1 (used by DOS) or empty poison
-			repCheck.Reason = fmt.Sprintf("Response Body contained poison value %s %d times", poison, strings.Count(body, poison))
+			repCheck.Reason = fmt.Sprintf("Reflection Body: Response Body contained poison value %s %d times", poison, strings.Count(body, poison))
 			repCheck.Occurrences = findOccurrencesWithContext(body, poison, 25)
 			// check for reflection in headers
 		} else if len(headersWithPoison) > 0 {
-			repCheck.Reason = fmt.Sprintf("Response Header(s) %s contained poison value %s", strings.Join(headersWithPoison, ", "), poison)
+			repCheck.Reason = fmt.Sprintf("Reflection Header: Response Header(s) %s contained poison value %s", strings.Join(headersWithPoison, ", "), poison)
 			// check for different status code
 		} else if statusCode1 >= 0 && statusCode1 != Config.Website.StatusCode && statusCode1 == statusCode2 {
 			// check if status code should be ignored
@@ -101,7 +101,7 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 				}
 				return checkPoisoningIndicators(repResult, repCheck, success, body, poison, statusCode1, statusCode2, sameBodyLength, header, true)
 			} else {
-				repCheck.Reason = fmt.Sprintf("Status Code %d differed from %d", statusCode1, Config.Website.StatusCode)
+				repCheck.Reason = fmt.Sprintf("Changed Status Code: Status Code %d differed from %d", statusCode1, Config.Website.StatusCode)
 			}
 			// check for different body length
 		} else if Config.CLDiff != 0 && success != "" && sameBodyLength && len(body) > 0 && compareLengths(len(body), len(Config.Website.Body), Config.CLDiff) {
@@ -126,7 +126,7 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 				}
 				return checkPoisoningIndicators(repResult, repCheck, success, body, poison, statusCode1, statusCode2, sameBodyLength, header, true)
 			} else {
-				repCheck.Reason = fmt.Sprintf("Length %d differed more than %d bytes from normal length %d", len(body), Config.CLDiff, len(Config.Website.Body))
+				repCheck.Reason = fmt.Sprintf("Changed Content Length: Length %d differed more than %d bytes from normal length %d", len(body), Config.CLDiff, len(Config.Website.Body))
 			}
 		} else {
 			return headersWithPoison
