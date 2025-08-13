@@ -71,6 +71,8 @@ func ParseFlags(vers string) {
 		"force", "f", false, "Perform the tests no matter if there is a cache or even the cachebuster works or not")
 	appendString(&generalOptions, &ignoreStatus,
 		"ignorestatus", "is", "", "Ignore a specific status code for cache poisoning")
+	appendString(&generalOptions, &Config.ReasonTypes,
+		"reasontypes", "rt", "body,header,status,length", "Choose which reason types to use for cache poisoning. Choose from: body (reflection in body),header (reflection in header), status (change of status code), length (change of body length). Default is 'body,header,status,length'")
 	appendInt(&generalOptions, &Config.CLDiff,
 		"contentlengthdifference", "cldiff", 5000, "Threshold for reporting possible Finding, when 'poisoned' response differs more from the original length. Default is 5000. 0 = don't check. May be prone to false positives!")
 	appendInt(&generalOptions, &Config.HMDiff,

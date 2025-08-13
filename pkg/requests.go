@@ -49,7 +49,7 @@ func getRespSplit() string {
 
 func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, success string, body string, poison string, statusCode1 int, statusCode2 int, sameBodyLength bool, header http.Header, recursive bool) []string {
 	headersWithPoison := []string{}
-	if header != nil && poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && poison != "1" { // dont check for reflection of http/https/nothttps (used by forwarded headers), 1 (used by DOS) or empty poison
+	if strings.Contains(Config.ReasonTypes, "header") && header != nil && poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && poison != "1" { // dont check for reflection of http/https/nothttps (used by forwarded headers), 1 (used by DOS) or empty poison
 		for x := range header {
 			if x == RESP_SPLIT_HEADER && header.Get(x) == RESP_SPLIT_VALUE {
 				repCheck.Reason = "HTTP Response Splitting"
@@ -62,14 +62,14 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 
 	if repCheck.Reason == "" {
 		// check for reflrection in body
-		if poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && poison != "1" && strings.Contains(body, poison) { // dont check for reflection of http/https/nothttps (used by forwarded headers), 1 (used by DOS) or empty poison
+		if strings.Contains(Config.ReasonTypes, "body") && poison != "" && poison != "http" && poison != "https" && poison != "nothttps" && poison != "1" && strings.Contains(body, poison) { // dont check for reflection of http/https/nothttps (used by forwarded headers), 1 (used by DOS) or empty poison
 			repCheck.Reason = fmt.Sprintf("Reflection Body: Response Body contained poison value %s %d times", poison, strings.Count(body, poison))
 			repCheck.Occurrences = findOccurrencesWithContext(body, poison, 25)
 			// check for reflection in headers
 		} else if len(headersWithPoison) > 0 {
 			repCheck.Reason = fmt.Sprintf("Reflection Header: Response Header(s) %s contained poison value %s", strings.Join(headersWithPoison, ", "), poison)
 			// check for different status code
-		} else if statusCode1 >= 0 && statusCode1 != Config.Website.StatusCode && statusCode1 == statusCode2 {
+		} else if strings.Contains(Config.ReasonTypes, "status") && statusCode1 >= 0 && statusCode1 != Config.Website.StatusCode && statusCode1 == statusCode2 {
 			// check if status code should be ignored
 			for _, status := range Config.IgnoreStatus {
 				if statusCode1 == status || Config.Website.StatusCode == status {
@@ -104,7 +104,7 @@ func checkPoisoningIndicators(repResult *reportResult, repCheck reportCheck, suc
 				repCheck.Reason = fmt.Sprintf("Changed Status Code: Status Code %d differed from %d", statusCode1, Config.Website.StatusCode)
 			}
 			// check for different body length
-		} else if Config.CLDiff != 0 && success != "" && sameBodyLength && len(body) > 0 && compareLengths(len(body), len(Config.Website.Body), Config.CLDiff) {
+		} else if strings.Contains(Config.ReasonTypes, "length") && Config.CLDiff != 0 && success != "" && sameBodyLength && len(body) > 0 && compareLengths(len(body), len(Config.Website.Body), Config.CLDiff) {
 			if !recursive {
 				var tmpWebsite WebsiteStruct
 				var err error

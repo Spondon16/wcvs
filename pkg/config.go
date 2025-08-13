@@ -21,6 +21,7 @@ type (
 		DeclineCookies          bool
 		Force                   bool
 		UseHTTP                 bool
+		ReasonTypes             string
 		CLDiff                  int
 		HMDiff                  int
 		SkipTimebased           bool
