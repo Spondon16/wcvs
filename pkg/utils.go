@@ -41,7 +41,8 @@ func InitClient() {
 		DisableHeaderNamesNormalizing: true, // needed for request smuggling and other techniques using non-normalized headers
 		ReadTimeout:                   time.Duration(Config.TimeOut) * time.Second,
 		WriteTimeout:                  time.Duration(Config.TimeOut) * time.Second,
-		TLSConfig:                     &tls.Config{InsecureSkipVerify: true}}
+		TLSConfig:                     &tls.Config{InsecureSkipVerify: true},
+		ReadBufferSize:                8 * 1024}
 }
 
 func PrintNewLine() {
@@ -55,19 +56,20 @@ func PrintLog(msg string) {
 }
 
 func PrintVerbose(msg string, c int, threshold int) {
-	if c == Red {
+	switch c {
+	case Red:
 		PrintLog("[ERR] " + msg)
 		msg = color.RedString("[ERR] ") + msg
-	} else if c == Yellow {
+	case Yellow:
 		PrintLog("[!] " + msg)
 		msg = color.YellowString("[!] ") + msg
-	} else if c == Green {
+	case Green:
 		PrintLog("[+] " + msg)
 		msg = color.GreenString("[+] ") + msg
-	} else if c == Cyan {
+	case Cyan:
 		PrintLog("[*] " + msg)
 		msg = color.CyanString("[*] ") + msg
-	} else {
+	default:
 		PrintLog(msg)
 	}
 
