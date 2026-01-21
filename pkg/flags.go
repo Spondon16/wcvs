@@ -119,13 +119,13 @@ func ParseFlags(vers string) {
 	appendString(&requestOptions, &Config.CacheBuster,
 		"cachebuster", "cb", "cbwcvs", "Specify the cachebuster to use. The default value is cbwcvs")
 	appendString(&requestOptions, &setCookiesStr,
-		"setcookies", "sc", "", "Set a Cookie. Otherwise use file: to specify a file with urls. E.g. -sc uid=123 or -sc file:templates/cookie_list")
+		"setcookies", "sc", "", "Set a Cookie. Otherwise use file: to specify a file with cookies. E.g. -sc uid=123 or -sc file:templates/cookie_list")
 	appendString(&requestOptions, &setHeadersStr,
-		"setheaders", "sh", "", "Set a Header. Otherwise use file: to specify a file with urls. E.g. -sh 'User-Agent: Safari/1.1' or -sh file:templates/header_list")
+		"setheaders", "sh", "", "Set a Header. Otherwise use file: to specify a file with headers. E.g. -sh 'User-Agent: Safari/1.1' or -sh file:templates/header_list")
 	appendString(&requestOptions, &setParametersStr,
-		"setparameters", "sp", "", "Set a Query Parameter. Otherwise use file: to specify a file with urls. E.g. -sp user=admin or -sp file:templates/parameter_list")
+		"setparameters", "sp", "", "Set a Query Parameter. Otherwise use file: to specify a file with parameters. E.g. -sp user=admin or -sp file:templates/parameter_list")
 	appendString(&requestOptions, &setBodyStr,
-		"setbody", "sb", "", "Set the requests' body. Otherwise use file: to specify a file with urls. E.g. -sb 'admin=true' or -sh file:templates/body_file")
+		"setbody", "sb", "", "Set the requests' body. Otherwise use file: to specify a file with a body. E.g. -sb 'admin=true' or -sh file:templates/body_file")
 	appendBoolean(&requestOptions, &Config.DoPost,
 		"post", "post", false, "Do a POST request instead of a GET request")
 	appendString(&requestOptions, &Config.ContentType,
