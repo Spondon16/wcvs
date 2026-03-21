@@ -50,7 +50,7 @@ func PrintNewLine() {
 }
 
 func PrintLog(msg string) {
-	if Config.GenerateLog && Config.Intitialized {
+	if Config.GenerateLog && Config.Initialized {
 		log.Print(msg)
 	}
 }
@@ -73,7 +73,7 @@ func PrintVerbose(msg string, c int, threshold int) {
 		PrintLog(msg)
 	}
 
-	if Config.Verbosity >= threshold || !Config.Intitialized {
+	if Config.Verbosity >= threshold || !Config.Initialized {
 		fmt.Print(msg)
 	}
 }
@@ -138,7 +138,6 @@ func setRequest(req *fasthttp.Request, doPost bool, cb string, cookie map[string
 func responseCookiesToMap(resp *fasthttp.Response, cookieMap map[string]string) map[string]string {
 	resp.Header.VisitAllCookie(func(key, value []byte) {
 		c := &fasthttp.Cookie{}
-		c.ParseBytes(value)
 		if err := c.ParseBytes(value); err == nil {
 			cookieMap[string(key)] = string(c.Value())
 		} else {
@@ -326,14 +325,14 @@ func checkCacheHit(value string, indicator string) bool {
 		}
 		// Cache Hit may have 0,>0 or >0,0 as value. Both responses are cached
 	} else if strings.EqualFold("x-cache-hits", indicator) {
-		for _, x := range strings.Split(indicator, ",") {
+		for _, x := range strings.Split(value, ",") {
 			x = strings.TrimSpace(x)
 			if x != "0" {
 				return true
 			}
 		}
 	} else if strings.EqualFold("x-cc-via", indicator) {
-		if strings.Contains(indicator, "[H,") {
+		if strings.Contains(value, "[H,") {
 			return true
 		}
 		// Some Headers may have "miss,hit" or "hit,miss" as value. But both are cached responses.
