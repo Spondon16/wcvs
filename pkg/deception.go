@@ -17,42 +17,84 @@ func TestWebCacheDeception() reportResult {
 	// cacheable extensions: class, css, jar, js, jpg, jpeg, gif, ico, png, bmp, pict, csv, doc, docx, xls, xlsx, ps, pdf, pls, ppt, pptx, tif, tiff, ttf, otf, webp, woff, woff2, svg, svgz, eot, eps, ejs, swf, torrent, midi, mid
 
 	appendings := []string{
-		"/.css",                                       // Path parameter
-		"/nonexistent1.css",                           // Path parameter
-		"/../nonexistent2.css",                        // Path traversal
-		"/%2e%2e/nonexistent3.css",                    // Encoded path traversal
-		"%0Anonexistent4.css",                         // Encoded Newline
-		"%00nonexistent5.css",                         // Encoded Null Byte
-		"%09nonexistent6.css",                         // Encoded Tab
-		"%3Bnonexistent7.css",                         // Encoded Semicolon
-		"%23nonexistent8.css",                         // Encoded Pound
-		"%3Fname=valnonexistent9.css",                 // Encoded Question Mark
-		"%26name=valnonexistent10.css",                // Encoded Ampersand
-		";nonexistent11.css",                          // Semicolon
-		"?nonexistent12.css",                          // Question Mark
-		"&nonexistent13.css",                          // Ampersand
-		"%0A%2f%2e%2e%2fresources%2fnonexistent1.css", // Encoded Path Traversal to static directory using Encoded Newline
-		"%00%2f%2e%2e%2fresources%2fnonexistent2.css", // Encoded Path Traversal to static directory using Encoded Null Byte
-		"%09%2f%2e%2e%2fresources%2fnonexistent3.css", // Encoded Path Traversal to static directory using Encoded Tab
-		"%3B%2f%2e%2e%2fresources%2fnonexistent4.css", // Encoded Path Traversal to static directoryEncoded using Semicolon
-		"%23%2f%2e%2e%2fresources%2fnonexistent5.css", // Encoded Path Traversal to static directory using Encoded Pound
-		"%3F%2f%2e%2e%2fresources%2fnonexistent6.css", // Encoded Path Traversal to static directory using Encoded Question Mark
-		"%26%2f%2e%2e%2fresources%2fnonexistent7.css", // Encoded Path Traversal to static directory using Encoded Ampersand
-		";%2f%2e%2e%2fresources%2fnonexistent8.css",   // Encoded Path Traversal to static directory using Semicolon
-		"?%2f%2e%2e%2fresources%2fnonexistent9.css",   // Encoded Path Traversal to static directoy using Question Mark
-		"&%2f%2e%2e%2fresources%2fnonexistent10.css",  // Encoded Path Traversal to static directory using Ampersand
-		"%0A%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt", // Encoded Path Traversal to robots.txt using Encoded Newline
-		"%00%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt", // Encoded Path Traversal to robots.txt directory using Encoded Null Byte
-		"%09%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt", // Encoded Path Traversal to robots.txt directory using Encoded Tab
-		"%3B%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt", // Encoded Path Traversal to robots.txt directoryEncoded using Semicolon
-		"%23%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt", // Encoded Path Traversal to robots.txt directory using Encoded Pound
-		"%3F%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt", // Encoded Path Traversal to robots.txt directory using Encoded Question Mark
-		"%26%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt", // Encoded Path Traversal to robots.txt directory using Encoded Ampersand
-		";%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",   // Encoded Path Traversal to robots.txt directory using Semicolon
-		"?%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",   // Encoded Path Traversal to robots.txt directoy using Question Mark
-		"&%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",   // Encoded Path Traversal to robots.txt directory using Ampersand
+		// --- CSS extension ---
+		"/.css",                   // Path parameter
+		"/nonexistent1.css",       // Path parameter
+		"/../nonexistent2.css",    // Path traversal
+		"/%2e%2e/nonexistent3.css", // Encoded path traversal
+		"%0Anonexistent4.css",     // Encoded Newline
+		"%00nonexistent5.css",     // Encoded Null Byte
+		"%09nonexistent6.css",     // Encoded Tab
+		"%3Bnonexistent7.css",     // Encoded Semicolon
+		"%23nonexistent8.css",     // Encoded Pound
+		"%3Fname=valnonexistent9.css",  // Encoded Question Mark
+		"%26name=valnonexistent10.css", // Encoded Ampersand
+		";nonexistent11.css",      // Semicolon
+		"?nonexistent12.css",      // Question Mark
+		"&nonexistent13.css",      // Ampersand
+		// --- JS extension (common static asset) ---
+		"/nonexistent1.js",        // Path parameter JS
+		"/../nonexistent2.js",     // Path traversal JS
+		"%0Anonexistent4.js",      // Encoded Newline JS
+		"%3Bnonexistent7.js",      // Encoded Semicolon JS
+		";nonexistent11.js",       // Semicolon JS
+		"?nonexistent12.js",       // Question Mark JS
+		// --- Other static file extensions ---
+		"/nonexistent1.png",       // PNG image extension
+		"/nonexistent1.ico",       // Favicon extension
+		"/nonexistent1.woff2",     // Web font extension
+		"/nonexistent1.svg",       // SVG extension
+		"/nonexistent1.json",      // JSON extension
+		"?nonexistent.json",       // Question Mark JSON
+		";nonexistent.png",        // Semicolon PNG
+		// --- Web-cache normalization: %2F treated as / by cache but not origin ---
+		"%2F..%2Fnonexistentcache1.css",     // Web cache normalization (CSS)
+		"%2F..%2Fnonexistentcache2.js",      // Web cache normalization (JS)
+		"%2F..%2F..%2Fnonexistentcache3.css", // Double traversal web cache normalization
+		// --- Double URL-encoding ---
+		"%252e%252e%2Fnonexistent1.css",     // Double URL-encoded path traversal
+		"%252F..%252Fnonexistent2.css",      // Double-encoded slash traversal
+		// --- Nginx off-by-slash: path traversal normalization ---
+		"/..;/nonexistent1.css",             // Tomcat/Java path traversal via semicolon
+		"..%2Fnonexistent1.css",             // Relative path traversal
+		// --- Encoded path traversal to static directory using Encoded Newline ---
+		"%0A%2f%2e%2e%2fresources%2fnonexistent1.css",
+		"%00%2f%2e%2e%2fresources%2fnonexistent2.css",
+		"%09%2f%2e%2e%2fresources%2fnonexistent3.css",
+		"%3B%2f%2e%2e%2fresources%2fnonexistent4.css",
+		"%23%2f%2e%2e%2fresources%2fnonexistent5.css",
+		"%3F%2f%2e%2e%2fresources%2fnonexistent6.css",
+		"%26%2f%2e%2e%2fresources%2fnonexistent7.css",
+		";%2f%2e%2e%2fresources%2fnonexistent8.css",
+		"?%2f%2e%2e%2fresources%2fnonexistent9.css",
+		"&%2f%2e%2e%2fresources%2fnonexistent10.css",
+		// --- Encoded path traversal to robots.txt ---
+		"%0A%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
+		"%00%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
+		"%09%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
+		"%3B%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
+		"%23%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
+		"%3F%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
+		"%26%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
+		";%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
+		"?%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
+		"&%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
 	}
-	// TODO add "Exploiting normalization by the origin server" cache deception which needs to prepend something before the url path
+
+	// Static directory prefixes used for "Exploiting normalization by the origin server"
+	// The cache treats these as static assets; the origin normalizes the %2F..%2F away.
+	originNormPrefixes := []string{
+		"static",
+		"assets",
+		"resources",
+		"js",
+		"css",
+		"img",
+		"images",
+		"public",
+		"files",
+		"media",
+	}
 
 	if Config.Website.StatusCode != 200 || Config.Website.Body == "" {
 		msg := "Skipping Web Cache Deception test, as it requires a valid website configuration with a status code of 200 and a non-empty body.\n"
@@ -66,6 +108,18 @@ func TestWebCacheDeception() reportResult {
 	// test each appending one after another
 	for _, appendStr := range appendings {
 		err := webCacheDeceptionTemplate(&repResult, appendStr)
+		if err != nil {
+			repResult.HasError = true
+			repResult.ErrorMessages = append(repResult.ErrorMessages, err.Error())
+		}
+	}
+
+	// Test "Exploiting normalization by the origin server":
+	// Cache sees /STATIC_PREFIX/..%2FORIGINAL_PATH as cacheable static asset.
+	// Origin normalizes %2F..%2F away and serves the original sensitive page.
+	PrintVerbose("Testing for Web Cache Deception via origin server normalization\n", NoColor, 1)
+	for _, prefix := range originNormPrefixes {
+		err := webCacheDeceptionOriginNormTemplate(&repResult, prefix)
 		if err != nil {
 			repResult.HasError = true
 			repResult.ErrorMessages = append(repResult.ErrorMessages, err.Error())
@@ -163,6 +217,115 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 		// Dump the request
 		repCheck.Request.Request = string(req.String())
 		// Dump the response without the body
+		resp.SkipBody = true
+		repCheck.Request.Response = string(resp.String())
+
+		repResult.Checks = append(repResult.Checks, repCheck)
+	} else {
+		PrintVerbose("Curl command: "+repCheck.Request.CurlCommand+"\n", NoColor, 2)
+	}
+
+	return nil
+}
+
+// webCacheDeceptionOriginNormTemplate tests "Exploiting normalization by the origin server":
+// The cache treats /STATIC_PREFIX/..%2FORIGINAL_PATH as a cacheable static asset.
+// The origin server normalizes the encoded traversal (%2F..%2F) and serves the original
+// sensitive resource. If the cache stores the response, other users fetching the static
+// path would receive the victim's cached sensitive data.
+//
+// Example: https://example.com/static/..%2Fmy-account
+//   - Cache keys this as a path under /static/ → caches the response
+//   - Origin decodes %2F to / → resolves /static/../my-account → /my-account
+func webCacheDeceptionOriginNormTemplate(repResult *reportResult, staticPrefix string) error {
+	var msg string
+	var repCheck reportCheck
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+
+	// Build the modified URL: scheme://host/STATIC_PREFIX/..%2FORIGINAL_PATH
+	// e.g. https://example.com/static/..%2Fmy-account
+	parsedUrl := Config.Website.Url
+	host := parsedUrl.Scheme + "://" + parsedUrl.Host
+	originalPath := parsedUrl.RequestURI() // includes path + query string
+
+	// Strip the leading / from the original path so we can construct
+	// /STATIC_PREFIX/..%2FORIGINAL_PATH
+	pathWithoutLeadingSlash := strings.TrimPrefix(originalPath, "/")
+	modifiedPath := "/" + staticPrefix + "/..%2F" + pathWithoutLeadingSlash
+	modifiedURL := host + modifiedPath
+
+	req.Header.SetMethod("GET")
+	req.SetRequestURI(modifiedURL)
+	setRequest(req, false, "", nil, false)
+
+	err := client.Do(req, resp)
+	if err != nil {
+		msg = fmt.Sprintf("webCacheDeceptionOriginNormTemplate: %s: client.Do: %s\n", staticPrefix, err.Error())
+		Print(msg, Red)
+		return errors.New(msg)
+	}
+
+	waitLimiter("Web Cache Deception Origin Normalization")
+
+	// Only continue if the origin served the same body (sensitive data)
+	if resp.StatusCode() != Config.Website.StatusCode || string(resp.Body()) != Config.Website.Body {
+		return nil
+	}
+
+	if Config.Website.Cache.NoCache || Config.Website.Cache.Indicator == "age" {
+		time.Sleep(1 * time.Second)
+	}
+
+	waitLimiter("Web Cache Deception Origin Normalization")
+
+	err = client.Do(req, resp)
+	if err != nil {
+		msg = fmt.Sprintf("webCacheDeceptionOriginNormTemplate: %s: client.Do: %s\n", staticPrefix, err.Error())
+		Print(msg, Red)
+		return errors.New(msg)
+	}
+	respHeader := headerToMultiMap(&resp.Header)
+
+	command, err := fasthttp2curl.GetCurlCommandFastHttp(req)
+	if err != nil {
+		PrintVerbose("Error: fasthttp2curl: "+err.Error()+"\n", Yellow, 1)
+	}
+	repCheck.Request.CurlCommand = command.String()
+	PrintVerbose("Curl command: "+repCheck.Request.CurlCommand+"\n", NoColor, 2)
+
+	var cacheIndicators []string
+	if Config.Website.Cache.Indicator == "" {
+		cacheIndicators = analyzeCacheIndicator(respHeader)
+	} else {
+		cacheIndicators = []string{Config.Website.Cache.Indicator}
+	}
+
+	hit := false
+	for _, indicator := range cacheIndicators {
+		for _, v := range respHeader[indicator] {
+			indicValue := strings.TrimSpace(strings.ToLower(v))
+			if checkCacheHit(indicValue, Config.Website.Cache.Indicator) {
+				hit = true
+				Config.Website.Cache.Indicator = indicator
+			}
+		}
+	}
+
+	if hit && string(resp.Body()) == Config.Website.Body && resp.StatusCode() == Config.Website.StatusCode {
+		repResult.Vulnerable = true
+		repCheck.Reason = "The response got cached due to Web Cache Deception via origin server normalization"
+		identifier := "/" + staticPrefix + "/..%2F" + pathWithoutLeadingSlash
+		msg = fmt.Sprintf("%s was successfully decepted via origin normalization! prefix: /%s/..%%2F\n", modifiedURL, staticPrefix)
+		Print(msg, Green)
+		msg = "Curl: " + repCheck.Request.CurlCommand + "\n\n"
+		Print(msg, Green)
+
+		repCheck.Identifier = identifier
+		repCheck.URL = req.URI().String()
+		repCheck.Request.Request = string(req.String())
 		resp.SkipBody = true
 		repCheck.Request.Response = string(resp.String())
 

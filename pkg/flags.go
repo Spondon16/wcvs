@@ -47,7 +47,7 @@ func ParseFlags(vers string) {
 	}
 
 	// General Options
-	techniqueNames := "deception,cookies,css,forwarding,smuggling,dos,headers,parameters,fatget,cloaking,splitting,pollution,encoding"
+	techniqueNames := "deception,cookies,css,forwarding,smuggling,dos,headers,parameters,fatget,cloaking,splitting,pollution,encoding,unkeyedquery,portpoisoning"
 
 	var ignoreStatus string
 

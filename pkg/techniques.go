@@ -143,6 +143,42 @@ func ScanForwardingHeaders() reportResult {
 	value = "http:\\\\" + poison + "/foo"
 	ForwardHeadersTemplate(&repResult, []string{header}, []string{value}, header, poison, NO_DUPE_HEADER)
 
+	// X-Rewrite-URL Header (IIS/Apache mod_rewrite path override)
+	header = "X-Rewrite-URL"
+	poison = "p" + randInt()
+	value = "/" + poison
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{value}, header, poison, NO_DUPE_HEADER)
+
+	// X-Forwarded-Server Header
+	header = "X-Forwarded-Server"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// X-Host Header (alternative host override used by some proxies)
+	header = "X-Host"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// X-HTTP-Host-Override (used by some frameworks as host override)
+	header = "X-HTTP-Host-Override"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// X-Forwarded-Prefix (used by reverse proxies e.g. Spring Cloud Gateway, Next.js)
+	header = "X-Forwarded-Prefix"
+	poison = "/" + "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// X-Forwarded-Path (used by some reverse proxies as path override)
+	header = "X-Forwarded-Path"
+	poison = "/" + "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// X-Original-Host (used by some proxies/load balancers)
+	header = "X-Original-Host"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
 	return repResult
 }
 
@@ -930,6 +966,170 @@ func ScanParameterEncoding() reportResult {
 		}(is, s, poison, is >= len(impactfulQueries)/2)
 	}
 	wg.Wait()
+
+	return repResult
+}
+
+// ScanUnkeyedQueryString detects when the entire query string (or unknown parameters)
+// is excluded from the cache key. This is a classic misconfiguration documented in
+// PortSwigger's "Web cache poisoning via an unkeyed query string" lab.
+//
+// Detection strategy:
+//  1. Prime the cache with a known URL (with cachebuster).
+//  2. Send a second request WITHOUT the cachebuster but WITH a unique poison parameter.
+//  3. If the second response is a cache HIT AND the poison value is reflected, the
+//     query string (or individual parameters) is unkeyed – allowing attackers to
+//     inject arbitrary values into cached responses.
+func ScanUnkeyedQueryString() reportResult {
+	var repResult reportResult
+	repResult.Technique = "Unkeyed Query String"
+
+	cache := Config.Website.Cache
+	if cache.Indicator == "" && !cache.TimeIndicator {
+		msg := "No cache indicator found. Skipping Unkeyed Query String test.\n"
+		Print(msg, Yellow)
+		repResult.HasError = true
+		repResult.ErrorMessages = append(repResult.ErrorMessages, msg)
+		return repResult
+	}
+
+	// Common parameters that are frequently stripped from cache keys
+	candidateParams := []string{
+		"utm_source",
+		"utm_medium",
+		"utm_campaign",
+		"utm_content",
+		"utm_term",
+		"fbclid",
+		"gclid",
+		"gad_campaignid",
+		"ref",
+		"source",
+		"origin",
+		"callback",
+		"redirect",
+		"url",
+		"next",
+		"_",
+	}
+	// Also include any unkeyed parameters discovered during the parameter scan
+	for _, k := range unkeyedQueries {
+		if !slices.Contains(candidateParams, k) {
+			candidateParams = append(candidateParams, k)
+		}
+	}
+
+	rUrl := Config.Website.Url.String()
+	cb := "cb" + randInt()
+
+	// Prime the cache for this URL (with cachebuster so it's a fresh entry)
+	rp := requestParams{
+		identifier: "unkeyed-query-string-prime",
+		url:        rUrl,
+		cb:         cb,
+	}
+	firstRequest(rp)
+
+	var m sync.Mutex
+	var wg sync.WaitGroup
+
+	threads := Config.Threads
+	if Config.Website.Cache.CBisHTTPMethod {
+		threads = 1
+		PrintVerbose("Can only scan single threaded because a HTTP Method is used as Cachebuster...\n", Yellow, 1)
+	}
+	sem := make(chan int, threads)
+	wg.Add(len(candidateParams))
+
+	for i, param := range candidateParams {
+		go func(i int, param string) {
+			defer wg.Done()
+			sem <- 1
+			defer func() { <-sem }()
+
+			poison := "p" + randInt()
+			identifier := fmt.Sprintf("unkeyed query string %s", param)
+			success := fmt.Sprintf("Unkeyed query string: parameter %s was reflected in a cached response! poison: %s\n", param, poison)
+
+			msg := fmt.Sprintf("Testing unkeyed query string (%d/%d) param: %s\n", i+1, len(candidateParams), param)
+			PrintVerbose(msg, NoColor, 2)
+
+			rp := requestParams{
+				repResult:  &repResult,
+				headers:    []string{""},
+				values:     []string{poison},
+				parameters: []string{param + "=" + poison},
+				name:       param,
+				identifier: identifier,
+				poison:     poison,
+				url:        rUrl,
+				cb:         cb,
+				success:    success,
+				m:          &m,
+			}
+			issueRequests(rp)
+		}(i, param)
+	}
+	wg.Wait()
+
+	return repResult
+}
+
+// ScanPortPoisoning checks whether the server reflects a poisoned port number from
+// various port-override headers into the response. When the cache stores this
+// response, subsequent visitors will receive the attacker's value in URLs, scripts,
+// or redirects – a classic PortSwigger "Web cache poisoning with an unkeyed port" finding.
+func ScanPortPoisoning() reportResult {
+	var repResult reportResult
+	repResult.Technique = "Port Poisoning"
+
+	portInt := 31337
+	for searchBodyHeadersForString(strconv.Itoa(portInt), Config.Website.Body, Config.Website.Headers) {
+		portInt++
+	}
+	port := strconv.Itoa(portInt)
+
+	portHeaders := []struct{ header, value string }{
+		{"X-Forwarded-Port", port},
+		{"X-Forwarded-Host", Config.Website.Url.Host + ":" + port},
+		{"X-Host", Config.Website.Url.Host + ":" + port},
+		{"X-Original-Host", Config.Website.Url.Host + ":" + port},
+		{"Forwarded", "host=" + Config.Website.Url.Host + ":" + port},
+	}
+
+	for _, ph := range portHeaders {
+		rUrl := Config.Website.Url.String()
+		cb := "cb" + randInt()
+		identifier := fmt.Sprintf("port poisoning %s=%s", ph.header, ph.value)
+		success := fmt.Sprintf("Port %s was successfully poisoned via %s! cachebuster %s: %s\n", port, ph.header, Config.Website.Cache.CBName, cb)
+
+		rp := requestParams{
+			repResult:  &repResult,
+			headers:    []string{ph.header},
+			values:     []string{ph.value},
+			identifier: identifier,
+			poison:     port,
+			url:        rUrl,
+			cb:         cb,
+			success:    success,
+			m:          nil,
+		}
+		responseSplittingHeaders, _, _ := issueRequests(rp)
+
+		for _, responseSplittingHeader := range responseSplittingHeaders {
+			msg := fmt.Sprintf("Checking %s for Response Splitting (port poisoning), reflected in header %s\n", ph.header, responseSplittingHeader)
+			PrintVerbose(msg, Cyan, 1)
+
+			rp.values[0] += getRespSplit()
+			rp.url = rUrl
+			rp.cb = "cb" + randInt()
+			rp.poison += getRespSplit()
+			rp.success = fmt.Sprintf("Port %s via %s successfully poisoned header %s with Response Splitting! cachebuster %s: %s\n", port, ph.header, responseSplittingHeader, Config.Website.Cache.CBName, rp.cb)
+			rp.identifier += " response splitting"
+
+			issueRequests(rp)
+		}
+	}
 
 	return repResult
 }
