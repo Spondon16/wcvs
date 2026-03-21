@@ -2916,3 +2916,5 @@ zotero-api-version
 zotero-write-token
 ZRL_CMP
 ZXY
+X-Forwarded-Prefix
+X-Forwarded-Path
