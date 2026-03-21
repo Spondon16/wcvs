@@ -89,7 +89,7 @@ Successfully built 1668edcf6ee3
 ```
 $ docker run -it 1668edcf6ee3 /wcvs --help
 https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner
-version 1.0.0
+version 2.0.0
 ```
 
 # Usage
@@ -120,7 +120,6 @@ wcvs -u https://example.com -hw "file:/home/user/Documents/wordlist-header.txt" 
 - `--setbody/-sb` specifies the body which shall be added to the request
 - `--contenttype/-ct` specifies the value of the Content-Type header
 - `--useragentchrome/-uac` changes the User-Agent from `WebCacheVulnerabilityScanner v{Version-Number}` to `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36`. While the same can be achieved with e.g. `-sh "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) ...`, this flag provides a quicker way.
-- `--cacheheader/-ch` specify a custom cache header (case-insensitive)
 
 #### If you want to specify more than 1 cookie, parameter or header you need to specify a file which contains them. Take a look at the [available templates](https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner/tree/master/templates).
 
@@ -162,7 +161,7 @@ wcvs -u https://example.com -gr -gp /home/user/Documents -ej
 
 ## Crawl for URLs
 In order to crawl for URLs, `--recursivity/-r` needs to be set. It specifies how deep the crawler shall go recursion-wise.
-By default WCVS only crawls for URLs of the same domain. To also crawl for other domains, `--recdomains/red` can be used.
+By default WCVS only crawls for URLs of the same domain. To also crawl for other domains, `--recdomains/-red` can be used.
 To only crawl URLs which inherit a specific string, `--recinclude/-rin` can be used.
 `--reclimit/-rl` limits how many URLs are crawled for each recursion depth.
 Also, a list with URLs which shall not be crawled can be specified with `--recexclude/-rex`. `--generatecompleted/-gc` can, for example, be used to generate a list with all already tested URLs. If a scan is repeated, but WCVS shall not crawl and test again the same URLs, this list can be used for `--recexclude/-rex`.

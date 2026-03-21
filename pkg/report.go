@@ -72,14 +72,12 @@ func init() {
 func GenerateReport(report Report, filePath string) {
 	reportPath := filePath + "_Report.json"
 
-	var file *os.File
-	defer file.Close()
-
 	file, err := os.OpenFile(reportPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		msg := fmt.Sprintf("GenerateReport: os.OpenFile: %s\n", err.Error())
 		PrintFatal(msg)
 	}
+	defer file.Close()
 
 	report.Settings.IndentPrefix = ""
 	report.Settings.IndentSuffix = "    "
