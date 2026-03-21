@@ -170,6 +170,23 @@ func ParseFlags(vers string) {
 	fmt.Printf(getLogo()+"\nWCVS - the Web Cache Vulnerability Scanner. (v%s)"+"\n\n", version)
 
 	/* Checking values of Flags */
+	// Detect when a string flag accidentally consumed another flag as its value
+	// (e.g. -purl -sc "cookie" causes -purl to take "-sc" as proxy URL value)
+	flag.Visit(func(f *flag.Flag) {
+		val := f.Value.String()
+		if strings.HasPrefix(val, "-") {
+			// Strip one or two leading dashes to get the candidate flag name
+			trimmed := strings.TrimPrefix(val, "--")
+			if trimmed == val {
+				trimmed = strings.TrimPrefix(val, "-")
+			}
+			if trimmed != "" && flag.Lookup(trimmed) != nil {
+				msg := fmt.Sprintf("Flag -%s was given the value %q, which looks like another flag. Did you forget to provide a value for -%s? Use -h or --help for usage information.\n", f.Name, val, f.Name)
+				PrintFatal(msg)
+			}
+		}
+	})
+
 	if len(flag.Args()) > 0 {
 		msg := fmt.Sprintf("%s: Args are not supported! Use flags. Use -h or --help to get a list of all supported flags\n", flag.Args())
 		PrintFatal(msg)
