@@ -181,16 +181,30 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 
 	waitLimiter("Web Cache Deception")
 
-	err = client.Do(req, resp)
+	// Verification request sent WITHOUT cookies to simulate an unauthenticated attacker.
+	// True web cache deception requires that an attacker (without the victim's session) can
+	// access the cached sensitive response. If the cache uses the session cookie as part of
+	// its cache key, the attacker's request would be a miss, not a hit — and should not be
+	// reported as a finding. Sending without cookies eliminates this class of false positives.
+	reqVerify := fasthttp.AcquireRequest()
+	respVerify := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(reqVerify)
+	defer fasthttp.ReleaseResponse(respVerify)
+
+	reqVerify.Header.SetMethod("GET")
+	reqVerify.SetRequestURI(rUrl + appendStr)
+	setRequestHeaders(reqVerify, "")
+
+	err = client.Do(reqVerify, respVerify)
 	if err != nil {
-		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: client.Do: %s\n", appendStr, err.Error())
+		msg = fmt.Sprintf("webCacheDeceptionTemplate: %s: client.Do verify: %s\n", appendStr, err.Error())
 		Print(msg, Red)
 		return errors.New(msg)
 	}
-	respHeader := headerToMultiMap(&resp.Header)
+	respHeader := headerToMultiMap(&respVerify.Header)
 
 	// Add the request as curl command to the report
-	command, err := fasthttp2curl.GetCurlCommandFastHttp(req)
+	command, err := fasthttp2curl.GetCurlCommandFastHttp(reqVerify)
 	if err != nil {
 		PrintVerbose("Error: fasthttp2curl: "+err.Error()+"\n", Yellow, 1)
 	}
@@ -217,7 +231,7 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 	}
 
 	// check if there's a cache hit and if the body didn't change (otherwise it could be a cached error page, for example)
-	if hit && string(resp.Body()) == Config.Website.Body && resp.StatusCode() == Config.Website.StatusCode {
+	if hit && string(respVerify.Body()) == Config.Website.Body && respVerify.StatusCode() == Config.Website.StatusCode {
 		repResult.Vulnerable = true
 		repCheck.Reason = "The response got cached due to Web Cache Deception"
 		msg = fmt.Sprintf("%s was successfully decepted! appended: %s\n", rUrl, appendStr)
@@ -226,12 +240,12 @@ func webCacheDeceptionTemplate(repResult *reportResult, appendStr string) error 
 		Print(msg, Green)
 
 		repCheck.Identifier = appendStr
-		repCheck.URL = req.URI().String()
+		repCheck.URL = reqVerify.URI().String()
 		// Dump the request
-		repCheck.Request.Request = string(req.String())
+		repCheck.Request.Request = string(reqVerify.String())
 		// Dump the response without the body
-		resp.SkipBody = true
-		repCheck.Request.Response = string(resp.String())
+		respVerify.SkipBody = true
+		repCheck.Request.Response = string(respVerify.String())
 
 		repResult.Checks = append(repResult.Checks, repCheck)
 	} else {
@@ -294,15 +308,29 @@ func webCacheDeceptionOriginNormTemplate(repResult *reportResult, staticPrefix s
 
 	waitLimiter("Web Cache Deception Origin Normalization")
 
-	err = client.Do(req, resp)
+	// Verification request sent WITHOUT cookies to simulate an unauthenticated attacker.
+	// True web cache deception requires that an attacker (without the victim's session) can
+	// access the cached sensitive response. If the cache uses the session cookie as part of
+	// its cache key, the attacker's request would be a miss, not a hit — and should not be
+	// reported as a finding. Sending without cookies eliminates this class of false positives.
+	reqVerify := fasthttp.AcquireRequest()
+	respVerify := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(reqVerify)
+	defer fasthttp.ReleaseResponse(respVerify)
+
+	reqVerify.Header.SetMethod("GET")
+	reqVerify.SetRequestURI(modifiedURL)
+	setRequestHeaders(reqVerify, "")
+
+	err = client.Do(reqVerify, respVerify)
 	if err != nil {
-		msg = fmt.Sprintf("webCacheDeceptionOriginNormTemplate: %s: client.Do: %s\n", staticPrefix, err.Error())
+		msg = fmt.Sprintf("webCacheDeceptionOriginNormTemplate: %s: client.Do verify: %s\n", staticPrefix, err.Error())
 		Print(msg, Red)
 		return errors.New(msg)
 	}
-	respHeader := headerToMultiMap(&resp.Header)
+	respHeader := headerToMultiMap(&respVerify.Header)
 
-	command, err := fasthttp2curl.GetCurlCommandFastHttp(req)
+	command, err := fasthttp2curl.GetCurlCommandFastHttp(reqVerify)
 	if err != nil {
 		PrintVerbose("Error: fasthttp2curl: "+err.Error()+"\n", Yellow, 1)
 	}
@@ -327,7 +355,7 @@ func webCacheDeceptionOriginNormTemplate(repResult *reportResult, staticPrefix s
 		}
 	}
 
-	if hit && string(resp.Body()) == Config.Website.Body && resp.StatusCode() == Config.Website.StatusCode {
+	if hit && string(respVerify.Body()) == Config.Website.Body && respVerify.StatusCode() == Config.Website.StatusCode {
 		repResult.Vulnerable = true
 		repCheck.Reason = "The response got cached due to Web Cache Deception via origin server normalization"
 		identifier := "/" + staticPrefix + "/..%2F" + pathWithoutLeadingSlash
@@ -337,10 +365,10 @@ func webCacheDeceptionOriginNormTemplate(repResult *reportResult, staticPrefix s
 		Print(msg, Green)
 
 		repCheck.Identifier = identifier
-		repCheck.URL = req.URI().String()
-		repCheck.Request.Request = string(req.String())
-		resp.SkipBody = true
-		repCheck.Request.Response = string(resp.String())
+		repCheck.URL = reqVerify.URI().String()
+		repCheck.Request.Request = string(reqVerify.String())
+		respVerify.SkipBody = true
+		repCheck.Request.Response = string(respVerify.String())
 
 		repResult.Checks = append(repResult.Checks, repCheck)
 	} else {
