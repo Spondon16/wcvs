@@ -9,9 +9,9 @@
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
 </p>
 
-**Web Cache Vulnerability Scanner (WCVS)** — a fork by [Spondon16](https://github.com/Spondon16) with improved Web Cache Deception coverage and bug fixes.
+**Web Cache Vulnerability Scanner (WCVS)** — a community fork with improved Web Cache Deception coverage, additional unkeyed header tests, and bug fixes.
 
-Based on the original by [Hackmanit](https://hackmanit.de) and [Maximilian Hildebrand](https://www.github.com/m10x), this fork extends the deception technique set and provides a reliable, up-to-date build.
+Based on the original by [Hackmanit](https://hackmanit.de) and [Maximilian Hildebrand](https://www.github.com/m10x).
 
 ---
 
@@ -181,4 +181,4 @@ Web cache deception tricks a cache into storing a response to a sensitive, authe
 
 ## License
 
-WCVS is developed by [Hackmanit](https://hackmanit.de) and [Maximilian Hildebrand](https://www.github.com/m10x), forked by [Spondon16](https://github.com/Spondon16), and licensed under the [Apache License, Version 2.0](LICENSE).
+WCVS is developed by [Hackmanit](https://hackmanit.de) and [Maximilian Hildebrand](https://www.github.com/m10x), and licensed under the [Apache License, Version 2.0](LICENSE).

@@ -1,5 +1,5 @@
 #!/bin/bash
-version=1.4.2
+version=2.0.0
 
 rm build/*
 
