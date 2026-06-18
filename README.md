@@ -3,15 +3,15 @@
 </h1>
 
 <p align="center">
-  <a href="https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner/releases/latest"><img src="https://img.shields.io/github/release/Hackmanit/Web-Cache-Vulnerability-Scanner.svg?color=brightgreen" alt="Release"></a>
-  <a href="https://goreportcard.com/report/github.com/Hackmanit/Web-Cache-Vulnerability-Scanner"><img src="https://goreportcard.com/badge/github.com/Hackmanit/Web-Cache-Vulnerability-Scanner" alt="Go Report Card"></a>
-  <a href="https://golang.org/"><img src="https://img.shields.io/github/go-mod/go-version/Hackmanit/Web-Cache-Vulnerability-Scanner" alt="Go Version"></a>
+  <a href="https://github.com/Spondon16/wcvs/releases/latest"><img src="https://img.shields.io/github/release/Spondon16/wcvs.svg?color=brightgreen" alt="Release"></a>
+  <a href="https://goreportcard.com/report/github.com/Spondon16/wcvs"><img src="https://goreportcard.com/badge/github.com/Spondon16/wcvs" alt="Go Report Card"></a>
+  <a href="https://golang.org/"><img src="https://img.shields.io/github/go-mod/go-version/Spondon16/wcvs" alt="Go Version"></a>
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
 </p>
 
-**Web Cache Vulnerability Scanner (WCVS)** is a fast and versatile CLI tool for detecting [web cache poisoning](#web-cache-poisoning) and [web cache deception](#web-cache-deception) vulnerabilities. Developed by [Hackmanit](https://hackmanit.de) and [Maximilian Hildebrand](https://www.github.com/m10x), WCVS automates complex cache-based attack techniques, includes a built-in crawler, and adapts to specific web cache configurations for more efficient and accurate testing.
+**Web Cache Vulnerability Scanner (WCVS)** — a fork by [Spondon16](https://github.com/Spondon16) with improved Web Cache Deception coverage and bug fixes.
 
-Whether you're a penetration tester, a bug bounty hunter, or a security engineer integrating checks into CI/CD pipelines — WCVS covers the techniques you need.
+Based on the original by [Hackmanit](https://hackmanit.de) and [Maximilian Hildebrand](https://www.github.com/m10x), this fork extends the deception technique set and provides a reliable, up-to-date build.
 
 ---
 
@@ -20,17 +20,7 @@ Whether you're a penetration tester, a bug bounty hunter, or a security engineer
 - [Features](#features)
 - [Web Cache Deception Coverage](#web-cache-deception-coverage)
 - [Installation](#installation)
-  - [Option 1: Pre-built Binary](#option-1-pre-built-binary)
-  - [Option 2: Kali Linux / BlackArch Repository](#option-2-kali-linux--blackarch-repository)
-  - [Option 3: Install Using Go](#option-3-install-using-go)
-  - [Option 4: Docker](#option-4-docker)
 - [Usage](#usage)
-  - [Specify Headers, Parameters, Cookies, and More](#specify-headers-parameters-cookies-and-more)
-  - [Generate a JSON Report](#generate-a-json-report)
-  - [Crawl for URLs](#crawl-for-urls)
-  - [Use a Proxy](#use-a-proxy)
-  - [Throttle or Accelerate](#throttle-or-accelerate)
-  - [Further Flags](#further-flags)
 - [Background Information](#background-information)
 - [License](#license)
 
@@ -71,8 +61,6 @@ Whether you're a penetration tester, a bug bounty hunter, or a security engineer
 
 ## Web Cache Deception Coverage
 
-Web cache deception attacks trick a cache into storing a response to a sensitive, authenticated resource by making the request URL look like a public static file. WCVS tests a comprehensive set of techniques including:
-
 | Technique | Example Pattern | Description |
 |---|---|---|
 | Path parameter | `/.css` | Appends a static-looking path segment |
@@ -89,35 +77,26 @@ Web cache deception attacks trick a cache into storing a response to a sensitive
 
 ## Installation
 
-### Option 1: Pre-built Binary
-Prebuilt binaries for Linux, macOS, and Windows are available on the [releases page](https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner/releases).
+### Option 1: Pre-built Binary (Recommended)
+Prebuilt binaries for Linux, macOS, and Windows are available on the [releases page](https://github.com/Spondon16/wcvs/releases).
 
-### Option 2: Kali Linux / BlackArch Repository
+### Option 2: Install Using Go
 ```bash
-# Kali Linux
-apt install web-cache-vulnerability-scanner
-
-# BlackArch
-pacman -S wcvs
+go install -v github.com/Spondon16/wcvs@latest
 ```
 
-### Option 3: Install Using Go
-Requires Go 1.21 or higher.
+### Option 3: Build from Source
 ```bash
-go install -v github.com/Hackmanit/Web-Cache-Vulnerability-Scanner@latest
+git clone https://github.com/Spondon16/wcvs.git
+cd wcvs
+go build -o wcvs .
 ```
 
 ### Option 4: Docker
-
-**1. Clone repository or download the [latest source code release](https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner/releases/latest)**
-
-**2. Build the Docker image** (the wordlists folder is automatically included):
 ```bash
+git clone https://github.com/Spondon16/wcvs.git
+cd wcvs
 docker build -t wcvs .
-```
-
-**3. Run WCVS**:
-```bash
 docker run -it wcvs /wcvs --help
 ```
 
@@ -125,28 +104,17 @@ docker run -it wcvs /wcvs --help
 
 ## Usage
 
-WCVS is highly customizable via flags. Most flags accept either a direct value or a path to a file prefixed with `file:`.
-
-The only required flag is `-u/--url` — the target URL to test. WCVS accepts several URL formats:
-
 ```bash
-wcvs -u 127.0.0.1
-wcvs -u http://127.0.0.1
 wcvs -u https://example.com
-wcvs -u file:path/to/url_list
 ```
 
-> **Note:** Two wordlists are required for the first 5 poisoning techniques — one for headers and one for parameters. Place them in the same directory as WCVS, or specify them with `--headerwordlist/-hw` and `--parameterwordlist/-pw`.
+Two wordlists are required for header and parameter poisoning techniques — one for headers and one for parameters. Place them in the same directory as WCVS, or specify them with `--headerwordlist/-hw` and `--parameterwordlist/-pw`:
 
 ```bash
-wcvs -u https://example.com -hw "file:/home/user/Documents/wordlist-header.txt"
-wcvs -u https://example.com -pw "file:/home/user/Documents/wordlist-parameter.txt"
-wcvs -u https://example.com -hw "file:/home/user/wordlist-header.txt" -pw "file:/home/user/wordlist-parameter.txt"
+wcvs -u https://example.com -hw "file:wordlists/header_wordlist.txt" -pw "file:wordlists/parameter_wordlist.txt"
 ```
 
----
-
-## Specify Headers, Parameters, Cookies, and More
+### Specify Headers, Parameters, Cookies, and More
 
 | Flag | Short | Description |
 |---|---|---|
@@ -159,149 +127,58 @@ wcvs -u https://example.com -hw "file:/home/user/wordlist-header.txt" -pw "file:
 | `--contenttype` | `-ct` | Value for the `Content-Type` header |
 | `--useragentchrome` | `-uac` | Use a Chrome user-agent string |
 
-> **Tip:** To specify more than one cookie, header, or parameter, use a file. See the [available templates](https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner/tree/master/templates).
-
-### Examples:
 ```bash
-wcvs -u https://example.com -ch "X-Custom-Header-ABC"
-
-# Cookies
 wcvs -u https://example.com -sc "PHPSESSID=123"
-wcvs -u https://example.com -sc "file:/home/user/Documents/cookies.txt"
-
-# Headers
 wcvs -u https://example.com -sh "Referer: localhost"
-wcvs -u https://example.com -sh "file:/home/user/Documents/headers.txt"
-
-# Parameters
-wcvs -u https://example.com -sp "admin=true"
-wcvs -u https://example.com -sp "file:/home/user/Documents/parameters.txt"
-
-# POST with body
 wcvs -u https://example.com -post -sb "admin=true"
-wcvs -u https://example.com -post -sb "file:/home/user/Documents/body.txt"
-wcvs -u https://example.com -post -sb "{}" -ct "application/json"
-
-# Chrome User-Agent
-wcvs -u https://example.com -uac
 ```
 
----
+### Generate a JSON Report
 
-## Generate a JSON Report
-
-Use `--generatereport/-gr` to save a JSON report that is updated after each scanned URL.
-
-| Flag | Short | Description |
-|---|---|---|
-| `--generatereport` | `-gr` | Enable JSON report generation |
-| `--generatepath` | `-gp` | Directory where report and log files are written (default: `./`) |
-| `--escapejson` | `-ej` | Encode HTML special chars in the report |
-
-### Examples:
 ```bash
 wcvs -u https://example.com -gr
-wcvs -u https://example.com -gr -ej
 wcvs -u https://example.com -gr -gp /home/user/Documents
-wcvs -u https://example.com -gr -gp /home/user/Documents -ej
 ```
 
----
+### Crawl for URLs
 
-## Crawl for URLs
-
-WCVS includes a built-in crawler to discover and test additional pages automatically.
-
-| Flag | Short | Description |
-|---|---|---|
-| `--recursivity` | `-r` | Crawl depth (number of recursion levels) |
-| `--recdomains` | `-red` | Also crawl external/cross-domain URLs |
-| `--recinclude` | `-rin` | Only crawl URLs containing a specific string |
-| `--reclimit` | `-rl` | Max URLs to crawl per recursion depth |
-| `--recexclude` | `-rex` | File with URLs to skip |
-| `--generatecompleted` | `-gc` | Save a list of all tested URLs for future exclusion |
-
-### Examples:
 ```bash
 wcvs -u https://example.com -r 5
-wcvs -u https://example.com -r 5 -red /home/user/Documents/mydomains.txt
 wcvs -u https://example.com -r 5 -rl 2
-wcvs -u https://example.com -r 5 -rex /home/user/Documents/donttest.txt
 ```
 
----
+### Use a Proxy
 
-## Use a Proxy
-
-Use `--useproxy/-up` to route traffic through a proxy such as Burp Suite or OWASP ZAP.
-
-> **Burp Suite note:** Uncheck *"Settings > Network > HTTP > HTTP/2 > Default to HTTP/2 if the server supports it"* — otherwise some non-RFC-compliant techniques will fail.
-
-| Flag | Short | Description |
-|---|---|---|
-| `--useproxy` | `-up` | Enable proxy (default: `http://127.0.0.1:8080`) |
-| `--proxyurl` | `-purl` | Custom proxy URL |
-
-### Examples:
 ```bash
 wcvs -u https://example.com -up
 wcvs -u https://example.com -up -purl http://127.0.0.1:8081
 ```
 
----
+### Throttle or Accelerate
 
-## Throttle or Accelerate
-
-| Flag | Short | Description |
-|---|---|---|
-| `--reqrate` | `-rr` | Max requests per second (default: unrestricted) |
-| `--threads` | `-t` | Number of concurrent threads (default: 20) |
-
-### Examples:
 ```bash
 wcvs -u https://example.com -rr 10
-wcvs -u https://example.com -rr 1
-wcvs -u https://example.com -rr 0.5
 wcvs -u https://example.com -t 50
 ```
 
----
-
-## Further Flags
-
-Run `wcvs -h` for the full list of flags, descriptions, and usage:
-
-```bash
-wcvs -h
-```
+Run `wcvs -h` for the full list of flags.
 
 ---
 
 ## Background Information
 
 ### Web Cache Poisoning
-
 Web cache poisoning exploits discrepancies between what a cache stores and what it actually serves to users. By injecting malicious content via unkeyed inputs (headers, parameters, etc.), an attacker can poison a cached response that is then delivered to every subsequent visitor.
 
 ### Web Cache Deception
-
-Web cache deception tricks a cache into storing a response to a sensitive, authenticated resource by disguising the request URL as a public static file. For example, appending `;%2f%2e%2e%2frobots.txt` to a sensitive URL may cause the cache to key the response as a static resource while the origin still serves the sensitive page.
-
-WCVS tests a wide range of deception patterns — including single-level and multi-level encoded path traversals, delimiter injection, and origin-server normalization attacks — to provide broad coverage against real-world targets.
+Web cache deception tricks a cache into storing a response to a sensitive, authenticated resource by disguising the request URL as a public static file.
 
 ### Further Reading
-
-A short series of blog posts giving more context about web cache poisoning and WCVS:
-
 1. [Is Your Application Vulnerable to Web Cache Poisoning?](https://www.hackmanit.de/en/blog-en/142-is-your-application-vulnerable-to-web-cache-poisoning)
 2. [Web Cache Vulnerability Scanner (WCVS) - Free, Customizable, Easy-To-Use](https://www.hackmanit.de/en/blog-en/145-web-cache-vulnerability-scanner-wcvs-free-customizable-easy-to-use)
-
-The first version of WCVS was developed as part of a [bachelor's thesis by Maximilian Hildebrand](https://hackmanit.de/images/download/thesis/Automated-Scanning-for-Web-Cache-Poisoning-Vulnerabilities.pdf).
 
 ---
 
 ## License
 
-WCVS is developed by [Hackmanit](https://hackmanit.de) and [Maximilian Hildebrand](https://www.github.com/m10x) and licensed under the [Apache License, Version 2.0](LICENSE).
-
-<a href="https://hackmanit.de"><img src="https://www.hackmanit.de/templates/hackmanit-v2/img/wbm_hackmanit.png" width="30%"></a>
+WCVS is developed by [Hackmanit](https://hackmanit.de) and [Maximilian Hildebrand](https://www.github.com/m10x), forked by [Spondon16](https://github.com/Spondon16), and licensed under the [Apache License, Version 2.0](LICENSE).

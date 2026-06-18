@@ -179,6 +179,64 @@ func ScanForwardingHeaders() reportResult {
 	poison = "p" + randInt()
 	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
 
+	// --- Additional unkeyed forwarding headers ---
+
+	// True-Client-IP (Akamai)
+	header = "True-Client-IP"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// X-Real-IP (Nginx)
+	header = "X-Real-IP"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// X-Forwarded-For
+	header = "X-Forwarded-For"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// Accept-Language
+	header = "Accept-Language"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// cf-connecting-ip (Cloudflare)
+	header = "CF-Connecting-IP"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// cf-ipcountry (Cloudflare)
+	header = "CF-IPCountry"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// cf-visitor (Cloudflare)
+	header = "CF-Visitor"
+	poison = "p" + randInt()
+	value = `{"scheme":"` + poison + `"}`
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{value}, header, poison, NO_DUPE_HEADER)
+
+	// CloudFront-Forwarded-Proto (AWS CloudFront)
+	header = "CloudFront-Forwarded-Proto"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// CloudFront-Is-Desktop-Viewer (CloudFront)
+	header = "CloudFront-Is-Desktop-Viewer"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// CloudFront-Is-Mobile-Viewer (CloudFront)
+	header = "CloudFront-Is-Mobile-Viewer"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// CloudFront-Viewer-Country (CloudFront)
+	header = "CloudFront-Viewer-Country"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
 	return repResult
 }
 

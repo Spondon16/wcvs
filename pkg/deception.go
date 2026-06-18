@@ -47,6 +47,29 @@ func TestWebCacheDeception() reportResult {
 		"/nonexistent1.json",      // JSON extension
 		"?nonexistent.json",       // Question Mark JSON
 		";nonexistent.png",        // Semicolon PNG
+		// --- Additional static file extensions ---
+		"/nonexistent1.mjs",       // ES Module JS
+		"/nonexistent1.ts",        // TypeScript
+		"/nonexistent1.avif",      // AVIF image
+		"/nonexistent1.bmp",       // BMP image
+		"/nonexistent1.mp4",       // MP4 video
+		"/nonexistent1.pdf",       // PDF document
+		"/nonexistent1.xml",       // XML
+		"/nonexistent1.zip",       // ZIP archive
+		// --- Double extension tricks ---
+		"/nonexistent.php.css",    // PHP + CSS double extension
+		"/nonexistent.asp.js",     // ASP + JS double extension
+		// --- Fragment injection ---
+		"#nonexistent.css",        // Fragment + CSS
+		"#nonexistent.js",         // Fragment + JS
+		// --- More delimiter combinations ---
+		";nonexistent.json",       // Semicolon + JSON
+		"?nonexistent.xml",        // Question mark + XML
+		"/../nonexistent.png",     // Path traversal + PNG
+		"/../nonexistent.json",    // Path traversal + JSON
+		// --- Null byte with other extensions ---
+		"%00nonexistent.js",       // Null byte + JS
+		"%00nonexistent.png",      // Null byte + PNG
 		// --- Web-cache normalization: %2F treated as / by cache but not origin ---
 		"%2F..%2Fnonexistentcache1.css",     // Web cache normalization (CSS)
 		"%2F..%2Fnonexistentcache2.js",      // Web cache normalization (JS)

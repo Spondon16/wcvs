@@ -1,4 +1,4 @@
-module github.com/Hackmanit/Web-Cache-Vulnerability-Scanner
+module github.com/Spondon16/wcvs
 
 go 1.23.0
 
