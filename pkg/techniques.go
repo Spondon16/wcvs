@@ -237,6 +237,31 @@ func ScanForwardingHeaders() reportResult {
 	poison = "p" + randInt()
 	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
 
+	// X-Azure-ClientIP (Azure CDN/Front Door)
+	header = "X-Azure-ClientIP"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// X-Azure-SocketIP (Azure CDN/Front Door)
+	header = "X-Azure-SocketIP"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// X-Cloud-Trace-Context (GCP Cloud CDN)
+	header = "X-Cloud-Trace-Context"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// X-Amzn-Trace-Id (AWS API Gateway / Lambda@Edge)
+	header = "X-Amzn-Trace-Id"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
+	// X-Kong-Override (Kong API Gateway)
+	header = "X-Kong-Override"
+	poison = "p" + randInt()
+	ForwardHeadersTemplate(&repResult, []string{header}, []string{poison}, header, poison, NO_DUPE_HEADER)
+
 	return repResult
 }
 

