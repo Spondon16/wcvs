@@ -23,6 +23,7 @@ Based on the original by [Hackmanit](https://hackmanit.de) and [Maximilian Hilde
 - [Installation](#installation)
 - [Usage](#usage)
 - [Background Information](#background-information)
+- [Changelog](#changelog)
 - [License](#license)
 
 ---
@@ -187,6 +188,23 @@ Web cache deception tricks a cache into storing a response to a sensitive, authe
 ### Further Reading
 1. [Is Your Application Vulnerable to Web Cache Poisoning?](https://www.hackmanit.de/en/blog-en/142-is-your-application-vulnerable-to-web-cache-poisoning)
 2. [Web Cache Vulnerability Scanner (WCVS) - Free, Customizable, Easy-To-Use](https://www.hackmanit.de/en/blog-en/145-web-cache-vulnerability-scanner-wcvs-free-customizable-easy-to-use)
+
+---
+
+## Changelog
+
+### [v2.1.1](https://github.com/Spondon16/wcvs/releases/tag/v2.1.1)
+- Stopped double-printing status-code differences during poisoning checks — `firstRequest` and `firstRequestPoisoningIndicator` were both reporting the same status-code mismatch back to back for every check, roughly doubling console output during the Header/Parameter Poisoning phases
+- Cut redundant report writes from 3 to 2 per scan (removed a pointless empty-skeleton write before scanning even started)
+- Added an end-of-scan findings summary line (`Summary: N confirmed finding(s) on X/Y website(s)`), shown by default and independent of `-gr`
+
+### [v2.1.0](https://github.com/Spondon16/wcvs/releases/tag/v2.1.0)
+- Fixed a defer-in-loop `fasthttp` resource leak in cachebuster detection (`cachebusterCookie`/`Header`/`Parameter` could pile up thousands of unreleased request/response objects when run against the full default wordlists)
+- Added opt-in HTTP/2 support via `-http2`/`-h2` (header/parameter poisoning, cache deception, and fingerprinting run over real HTTP/2; request smuggling and header-oversize/meta-character techniques don't have an H2 equivalent and are unaffected)
+- Added new Web Cache Deception delimiters (`,` and `|`) and 5 cloud/CDN unkeyed forwarding headers (Azure Front Door, GCP Cloud CDN, AWS, Kong) found by cross-referencing external WCD/WCP research
+- Fixed the CLI banner/help output pointing "Repository:" at the upstream Hackmanit repo instead of this fork
+- Added CI (build/vet/staticcheck/test on every push and PR) and a tag-triggered release workflow that publishes cross-platform binaries automatically
+- Dockerfile base image bump (`debian:buster` → `debian:bookworm-slim`, buster's been EOL/unpatched since mid-2022)
 
 ---
 
