@@ -2,7 +2,7 @@
 set -e
 # Version defaults to 2.0.0 for local manual runs; CI passes the release tag
 # as $1 (e.g. `./buildBinariesLinux.sh v2.1.0`) so archive names track it.
-version="${1:-2.0.0}"
+version="${1:-2.1.0}"
 
 mkdir -p build
 rm -f build/*
