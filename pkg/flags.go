@@ -114,6 +114,8 @@ func ParseFlags(vers string) {
 		"url", "u", "", "Url to scan. Has to start with http:// or https://. Otherwise use file: to specify a file with (multiple) urls. E.g. -u https://www.example.com or -u file:templates/url_list")
 	appendBoolean(&requestOptions, &Config.UseHTTP,
 		"usehttp", "http", false, "Use http instead of https for URLs, which doesn't specify either one")
+	appendBoolean(&requestOptions, &Config.UseHTTP2,
+		"http2", "h2", false, "Send requests over HTTP/2 instead of HTTP/1.1 (TLS/ALPN only, no h2c, no proxy support). Request smuggling and header-oversize/meta-character techniques don't apply over HTTP/2 and will report errors instead of false results")
 	appendBoolean(&requestOptions, &Config.DeclineCookies,
 		"declineCookies", "dc", false, "Do you don't want to use cookies, which are received in the response of the first request?")
 	appendString(&requestOptions, &Config.CacheBuster,
@@ -280,9 +282,9 @@ func help() {
 
 	fmt.Printf(getLogo()+"\nWCVS - the Web Cache Vulnerability Scanner. (v%s)"+"\n\n", version)
 
-	fmt.Println("Published by Hackmanit under http://www.apache.org/licenses/LICENSE-2.0")
-	fmt.Println("Author: Maximilian Hildebrand")
-	fmt.Println("Repository: https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner")
+	fmt.Println("Originally published by Hackmanit (Maximilian Hildebrand) under http://www.apache.org/licenses/LICENSE-2.0")
+	fmt.Println("This fork: https://github.com/Spondon16/wcvs")
+	fmt.Println("Upstream: https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner")
 	fmt.Println("Blog Post: https://hackmanit.de/en/blog-en/145-web-cache-vulnerability-scanner-wcvs-free-customizable-easy-to-use")
 	fmt.Print("Usage: Web-Cache-Vulnerability-Scanner(.exe) [options]\n\n")
 

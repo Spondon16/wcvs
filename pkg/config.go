@@ -21,6 +21,7 @@ type (
 		DeclineCookies          bool
 		Force                   bool
 		UseHTTP                 bool
+		UseHTTP2                bool
 		ReasonTypes             string
 		CLDiff                  int
 		HMDiff                  int
@@ -59,8 +60,8 @@ type (
 		ParameterWordlist string
 
 		Initialized bool
-		Limiter      *rate.Limiter `json:"-"`
-		Website      WebsiteStruct `json:"-"`
+		Limiter     *rate.Limiter `json:"-"`
+		Website     WebsiteStruct `json:"-"`
 	}
 
 	WebsiteStruct struct {

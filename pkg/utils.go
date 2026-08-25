@@ -27,9 +27,23 @@ var (
 	Cyan    = 4
 )
 
-var client *fasthttp.Client
+// httpDoer is satisfied by both *fasthttp.Client and *http2Client, so every
+// caller of client.Do(req, resp) works unchanged regardless of -http2.
+type httpDoer interface {
+	Do(req *fasthttp.Request, resp *fasthttp.Response) error
+}
+
+var client httpDoer
 
 func InitClient() {
+	if Config.UseHTTP2 {
+		if Config.UseProxy {
+			PrintFatal("-http2 doesn't support -useproxy yet. Drop one of the two flags.\n")
+		}
+		client = newHTTP2Client()
+		return
+	}
+
 	var dialer fasthttp.DialFunc
 	if Config.UseProxy {
 		dialer = fasthttpproxy.FasthttpHTTPDialer(Config.ProxyURL)
@@ -136,7 +150,7 @@ func setRequest(req *fasthttp.Request, doPost bool, cb string, cookie map[string
 }
 
 func responseCookiesToMap(resp *fasthttp.Response, cookieMap map[string]string) map[string]string {
-	resp.Header.VisitAllCookie(func(key, value []byte) {
+	for key, value := range resp.Header.Cookies() {
 		c := &fasthttp.Cookie{}
 		if err := c.ParseBytes(value); err == nil {
 			cookieMap[string(key)] = string(c.Value())
@@ -144,7 +158,7 @@ func responseCookiesToMap(resp *fasthttp.Response, cookieMap map[string]string) 
 			msg := fmt.Sprintf("Error parsing cookie %s: %s\n", string(value), err.Error())
 			Print(msg, Red)
 		}
-	})
+	}
 
 	return cookieMap
 }
@@ -370,11 +384,9 @@ func findOccurrencesWithContext(body, search string, context int) []string {
 
 func headerToMultiMap(h *fasthttp.ResponseHeader) map[string][]string {
 	m := make(map[string][]string)
-	h.VisitAll(func(key, value []byte) {
-		k := string(key)
-		v := string(value)
-		m[k] = append(m[k], v)
-	})
+	for key, value := range h.All() {
+		m[string(key)] = append(m[string(key)], string(value))
+	}
 	return m
 }
 
