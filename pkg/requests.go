@@ -329,8 +329,12 @@ func firstRequest(rp requestParams) (body []byte, respStatusCode int, repRequest
 	respHeaders = headerToMultiMap(&resp.Header)
 
 	if resp.StatusCode() != Config.Website.StatusCode {
+		// Verbose-only: firstRequestPoisoningIndicator (called right after this
+		// returns, for every poisoning check) independently reports the same
+		// status-code difference as a classified finding. Printing both by
+		// default just duplicates the same fact in two different formats.
 		msg = fmt.Sprintf("Unexpected Status Code %d for %s\n", resp.StatusCode(), rp.identifier)
-		Print(msg, Yellow)
+		PrintVerbose(msg, Yellow, 2)
 	}
 
 	if stopContinuation(body, resp.StatusCode(), respHeaders) {
