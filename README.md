@@ -193,6 +193,9 @@ Web cache deception tricks a cache into storing a response to a sensitive, authe
 
 ## Changelog
 
+### [v2.1.2](https://github.com/Spondon16/wcvs/releases/tag/v2.1.2)
+- Added this Changelog section to the README (documentation only, no code changes)
+
 ### [v2.1.1](https://github.com/Spondon16/wcvs/releases/tag/v2.1.1)
 - Stopped double-printing status-code differences during poisoning checks — `firstRequest` and `firstRequestPoisoningIndicator` were both reporting the same status-code mismatch back to back for every check, roughly doubling console output during the Header/Parameter Poisoning phases
 - Cut redundant report writes from 3 to 2 per scan (removed a pointless empty-skeleton write before scanning even started)
