@@ -234,93 +234,156 @@ func checkIfAlwaysMiss(cacheIndicator string) (bool, error) {
 
 func cachebusterCookie(cache *CacheStruct) []error {
 	var errSlice []error
-	for k, _ := range Config.Website.Cookies {
-		errorString := "cachebusterCookie " + k
-		identifier := "Cookie " + k + " as Cachebuster"
-
-		req := fasthttp.AcquireRequest()
-		resp := fasthttp.AcquireResponse()
-		defer fasthttp.ReleaseRequest(req)
-		defer fasthttp.ReleaseResponse(resp)
-		var err error
-		var times []int64
-		newCookie := map[string]string{}
-
-		if cache.Indicator == "" {
-			// No Cache Indicator was found. So time will be used as Indicator
-
-			var cb string
-			for ii := range 5 * 2 {
-				weburl := Config.Website.Url.String()
-
-				if Config.DoPost {
-					req.Header.SetMethod("POST")
-					req.SetBodyString(Config.Body)
-				} else {
-					req.Header.SetMethod("GET")
-					if Config.Body != "" {
-						req.SetBodyString(Config.Body)
-
-					}
-				}
-				req.SetRequestURI(weburl)
-
-				if ii%2 == 0 {
-					cb = "cb" + randInt()
-					newCookie["key"] = k
-					newCookie["value"] = cb
-				}
-				setRequest(req, Config.DoPost, "", newCookie, false)
-
-				waitLimiter(errorString)
-				start := time.Now()
-
-				err = client.Do(req, resp)
-				if err != nil {
-					msg := fmt.Sprintf("%s: client.Do: %s", errorString, err.Error())
-					Print(msg+"\n", Red)
-					errSlice = append(errSlice, errors.New(msg))
-					continue
-				}
-				elapsed := time.Since(start).Milliseconds()
-				times = append(times, elapsed)
-
-				if resp.StatusCode() != Config.Website.StatusCode {
-					msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
-					Print(msg, Yellow)
-				}
-			}
-			msg := fmt.Sprintf("measured times: %d\n", times)
-			PrintVerbose(msg, NoColor, 2)
-
-			skip := false
-			for ii := range times {
-				// Cache miss has to take 30ms (misshitdif) longer than cache hit
-				if ii%2 == 1 && times[ii-1]-times[ii] < int64(Config.HMDiff) {
-					msg := fmt.Sprintf("%s was not successful (Cookie)\n", identifier)
-					PrintVerbose(msg, NoColor, 2)
-					skip = true
-					break
-				}
-			}
-			if skip {
-				continue
-			}
-			cache.TimeIndicator = true
-			cache.CBwasFound = true
-			cache.CBisCookie = true
-			cache.CBisHTTPMethod = false
-			cache.CBisHeader = false
-			cache.CBisParameter = false
-			cache.CBName = k
-
-			msg = fmt.Sprintf("%s was successful (Cookie, time was used as indicator)\n", identifier)
-			Print(msg, Cyan)
-
+	for k := range Config.Website.Cookies {
+		found := cachebusterCookieOne(cache, k, &errSlice)
+		if found {
 			return errSlice
-		} else {
-			// A hit miss Indicator was found. Sending 2 requests, each with a new cachebuster, expecting 2 misses
+		}
+	}
+	return errSlice
+}
+
+// cachebusterCookieOne tests a single cookie as cachebuster. Wrapped in its own
+// function so req/resp are released at the end of every iteration instead of
+// piling up until cachebusterCookie itself returns.
+func cachebusterCookieOne(cache *CacheStruct, k string, errSlice *[]error) (found bool) {
+	errorString := "cachebusterCookie " + k
+	identifier := "Cookie " + k + " as Cachebuster"
+
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+	var err error
+	var times []int64
+	newCookie := map[string]string{}
+
+	if cache.Indicator == "" {
+		// No Cache Indicator was found. So time will be used as Indicator
+
+		var cb string
+		for ii := range 5 * 2 {
 			weburl := Config.Website.Url.String()
+
+			if Config.DoPost {
+				req.Header.SetMethod("POST")
+				req.SetBodyString(Config.Body)
+			} else {
+				req.Header.SetMethod("GET")
+				if Config.Body != "" {
+					req.SetBodyString(Config.Body)
+
+				}
+			}
+			req.SetRequestURI(weburl)
+
+			if ii%2 == 0 {
+				cb = "cb" + randInt()
+				newCookie["key"] = k
+				newCookie["value"] = cb
+			}
+			setRequest(req, Config.DoPost, "", newCookie, false)
+
+			waitLimiter(errorString)
+			start := time.Now()
+
+			err = client.Do(req, resp)
+			if err != nil {
+				msg := fmt.Sprintf("%s: client.Do: %s", errorString, err.Error())
+				Print(msg+"\n", Red)
+				*errSlice = append(*errSlice, errors.New(msg))
+				return false
+			}
+			elapsed := time.Since(start).Milliseconds()
+			times = append(times, elapsed)
+
+			if resp.StatusCode() != Config.Website.StatusCode {
+				msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
+				Print(msg, Yellow)
+			}
+		}
+		msg := fmt.Sprintf("measured times: %d\n", times)
+		PrintVerbose(msg, NoColor, 2)
+
+		skip := false
+		for ii := range times {
+			// Cache miss has to take 30ms (misshitdif) longer than cache hit
+			if ii%2 == 1 && times[ii-1]-times[ii] < int64(Config.HMDiff) {
+				msg := fmt.Sprintf("%s was not successful (Cookie)\n", identifier)
+				PrintVerbose(msg, NoColor, 2)
+				skip = true
+				break
+			}
+		}
+		if skip {
+			return false
+		}
+		cache.TimeIndicator = true
+		cache.CBwasFound = true
+		cache.CBisCookie = true
+		cache.CBisHTTPMethod = false
+		cache.CBisHeader = false
+		cache.CBisParameter = false
+		cache.CBName = k
+
+		msg = fmt.Sprintf("%s was successful (Cookie, time was used as indicator)\n", identifier)
+		Print(msg, Cyan)
+
+		return true
+	} else {
+		// A hit miss Indicator was found. Sending 2 requests, each with a new cachebuster, expecting 2 misses
+		weburl := Config.Website.Url.String()
+		if Config.DoPost {
+			req.Header.SetMethod("POST")
+			req.SetBodyString(Config.Body)
+		} else {
+			req.Header.SetMethod("GET")
+			if Config.Body != "" {
+				req.SetBodyString(Config.Body)
+
+			}
+		}
+		req.SetRequestURI(weburl)
+
+		cb := "cb" + randInt()
+		newCookie["value"] = cb
+		setRequest(req, Config.DoPost, "", newCookie, false)
+
+		waitLimiter(errorString)
+
+		start := time.Now()
+
+		err = client.Do(req, resp)
+		if err != nil {
+			msg := fmt.Sprintf("%s: client.Do: %s", errorString, err.Error())
+			Print(msg+"\n", Red)
+			*errSlice = append(*errSlice, errors.New(msg))
+			return false
+		}
+
+		elapsed := time.Since(start).Milliseconds()
+		times = append(times, elapsed)
+
+		firstUnix := time.Now().Unix()
+
+		if resp.StatusCode() != Config.Website.StatusCode {
+			msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
+			Print(msg, Yellow)
+		}
+
+		respHeader := headerToMultiMap(&resp.Header)
+		hit := false
+		for _, v := range respHeader[cache.Indicator] {
+			indicValue := strings.TrimSpace(strings.ToLower(v))
+			hit = hit || checkCacheHit(indicValue, cache.Indicator)
+		}
+
+		if hit {
+			// If there is a hit, the cachebuster didn't work
+			msg := fmt.Sprintf("%s was not successful (Cookie)\n", identifier)
+			PrintVerbose(msg, NoColor, 2)
+			return false
+		} else {
 			if Config.DoPost {
 				req.Header.SetMethod("POST")
 				req.SetBodyString(Config.Body)
@@ -335,24 +398,29 @@ func cachebusterCookie(cache *CacheStruct) []error {
 
 			cb := "cb" + randInt()
 			newCookie["value"] = cb
+
 			setRequest(req, Config.DoPost, "", newCookie, false)
 
 			waitLimiter(errorString)
 
-			start := time.Now()
+			secondUnix := time.Now().Unix()
+			timeDiff := secondUnix - firstUnix
+			// make sure that there is at least 2 sec difference.
+			// So that first req has Age=0 and second req has Age>=2
+			if timeDiff <= 1 && strings.EqualFold("age", cache.Indicator) {
+				time.Sleep(2 * time.Second)
+			}
 
+			start := time.Now()
 			err = client.Do(req, resp)
+			elapsed := time.Since(start).Milliseconds()
+			times = append(times, elapsed)
 			if err != nil {
 				msg := fmt.Sprintf("%s: client.Do: %s", errorString, err.Error())
 				Print(msg+"\n", Red)
-				errSlice = append(errSlice, errors.New(msg))
-				continue
+				*errSlice = append(*errSlice, errors.New(msg))
+				return false
 			}
-
-			elapsed := time.Since(start).Milliseconds()
-			times = append(times, elapsed)
-
-			firstUnix := time.Now().Unix()
 
 			if resp.StatusCode() != Config.Website.StatusCode {
 				msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
@@ -365,87 +433,30 @@ func cachebusterCookie(cache *CacheStruct) []error {
 				indicValue := strings.TrimSpace(strings.ToLower(v))
 				hit = hit || checkCacheHit(indicValue, cache.Indicator)
 			}
-
 			if hit {
 				// If there is a hit, the cachebuster didn't work
 				msg := fmt.Sprintf("%s was not successful (Cookie)\n", identifier)
 				PrintVerbose(msg, NoColor, 2)
-				continue
+				cbNotFoundDifference(times, identifier)
 			} else {
-				if Config.DoPost {
-					req.Header.SetMethod("POST")
-					req.SetBodyString(Config.Body)
-				} else {
-					req.Header.SetMethod("GET")
-					if Config.Body != "" {
-						req.SetBodyString(Config.Body)
+				cache.CBwasFound = true
+				cache.CBisCookie = true
+				cache.CBisHTTPMethod = false
+				cache.CBisHeader = false
+				cache.CBisParameter = false
+				cache.CBName = k
 
-					}
-				}
-				req.SetRequestURI(weburl)
+				msg := fmt.Sprintf("%s was successful (Cookie)\n", identifier)
+				Print(msg, Cyan)
 
-				cb := "cb" + randInt()
-				newCookie["value"] = cb
+				cbFoundDifference(times, identifier)
 
-				setRequest(req, Config.DoPost, "", newCookie, false)
-
-				waitLimiter(errorString)
-
-				secondUnix := time.Now().Unix()
-				timeDiff := secondUnix - firstUnix
-				// make sure that there is at least 2 sec difference.
-				// So that first req has Age=0 and second req has Age>=2
-				if timeDiff <= 1 && strings.EqualFold("age", cache.Indicator) {
-					time.Sleep(2 * time.Second)
-				}
-
-				start := time.Now()
-				err = client.Do(req, resp)
-				elapsed := time.Since(start).Milliseconds()
-				times = append(times, elapsed)
-				if err != nil {
-					msg := fmt.Sprintf("%s: client.Do: %s", errorString, err.Error())
-					Print(msg+"\n", Red)
-					errSlice = append(errSlice, errors.New(msg))
-					continue
-				}
-
-				if resp.StatusCode() != Config.Website.StatusCode {
-					msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
-					Print(msg, Yellow)
-				}
-
-				respHeader := headerToMultiMap(&resp.Header)
-				hit := false
-				for _, v := range respHeader[cache.Indicator] {
-					indicValue := strings.TrimSpace(strings.ToLower(v))
-					hit = hit || checkCacheHit(indicValue, cache.Indicator)
-				}
-				if hit {
-					// If there is a hit, the cachebuster didn't work
-					msg := fmt.Sprintf("%s was not successful (Cookie)\n", identifier)
-					PrintVerbose(msg, NoColor, 2)
-					cbNotFoundDifference(times, identifier)
-				} else {
-					cache.CBwasFound = true
-					cache.CBisCookie = true
-					cache.CBisHTTPMethod = false
-					cache.CBisHeader = false
-					cache.CBisParameter = false
-					cache.CBName = k
-
-					msg := fmt.Sprintf("%s was successful (Cookie)\n", identifier)
-					Print(msg, Cyan)
-
-					cbFoundDifference(times, identifier)
-
-					return errSlice
-				}
+				return true
 			}
 		}
 	}
 
-	return errSlice
+	return false
 }
 
 func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
@@ -464,9 +475,6 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 	var errSlice []error
 
 	for i, header := range headers {
-		errorString := "cachebusterHeader " + header
-		identifier := "Header " + header + " as Cachebuster"
-
 		if len(values) < i+1 { // prevent index out of range
 			values = append(values, "")
 		}
@@ -475,90 +483,158 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 			continue
 		}
 
-		req := fasthttp.AcquireRequest()
-		resp := fasthttp.AcquireResponse()
-		defer fasthttp.ReleaseRequest(req)
-		defer fasthttp.ReleaseResponse(resp)
-		var err error
-		var times []int64
-
-		if cache.Indicator == "" {
-			// No Cache Indicator was found. So time will be used as Indicator
-
-			for ii := range 5 * 2 {
-				weburl := Config.Website.Url.String()
-
-				if Config.DoPost {
-					req.Header.SetMethod("POST")
-					req.SetBodyString(Config.Body)
-				} else {
-					req.Header.SetMethod("GET")
-					if Config.Body != "" {
-						req.SetBodyString(Config.Body)
-
-					}
-				}
-				req.SetRequestURI(weburl)
-
-				setRequest(req, Config.DoPost, "", nil, false)
-				if ii%2 == 0 {
-					cbvalue := values[i] + "cb" + randInt()
-					if h := req.Header.Peek(header); h != nil {
-						msg := fmt.Sprintf("Overwriting %s:%s with %s:%s\n", header, h, header, cbvalue)
-						Print(msg, NoColor)
-					}
-					req.Header.Set(header, cbvalue)
-				}
-
-				waitLimiter(errorString)
-				start := time.Now()
-				err = client.Do(req, resp)
-				elapsed := time.Since(start).Milliseconds()
-				times = append(times, elapsed)
-				if err != nil {
-					msg := fmt.Sprintf("%s: http.DefaultClient.Do: %s", errorString, err.Error())
-					Print(msg+"\n", Red)
-					errSlice = append(errSlice, errors.New(msg))
-					continue
-				}
-
-				if resp.StatusCode() != Config.Website.StatusCode {
-					msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
-					Print(msg, Yellow)
-				}
-			}
-			msg := fmt.Sprintf("measured times: %d\n", times)
-			PrintVerbose(msg, NoColor, 2)
-
-			skip := false
-			for ii := range times {
-				// Cache miss has to take 30ms (misshitdif) longer than cache hit
-				if ii%2 == 1 && times[ii-1]-times[ii] < int64(Config.HMDiff) {
-					msg := fmt.Sprintf("%s was not successful (Header)\n", identifier)
-					PrintVerbose(msg, NoColor, 2)
-					skip = true
-					break
-				}
-			}
-			if skip {
-				continue
-			}
-
-			cache.TimeIndicator = true
-			cache.CBwasFound = true
-			cache.CBisHeader = true
-			cache.CBisCookie = false
-			cache.CBisHTTPMethod = false
-			cache.CBisParameter = false
-			cache.CBName = header
-
-			msg = fmt.Sprintf("%s was successful (Header, time was used as indicator)\n", identifier)
-			Print(msg, Cyan)
-
+		found := cachebusterHeaderOne(cache, i, header, values, &errSlice)
+		if found {
 			return errSlice
-		} else {
-			// A hit miss Indicator was found. Sending 2 requests, each with a new cachebuster, expecting 2 misses
+		}
+	}
+	return errSlice
+}
+
+// cachebusterHeaderOne tests a single header as cachebuster. Wrapped in its own
+// function so req/resp are released at the end of every iteration instead of
+// piling up until cachebusterHeader itself returns (headers can come from a
+// multi-thousand-entry wordlist).
+func cachebusterHeaderOne(cache *CacheStruct, i int, header string, values []string, errSlice *[]error) (found bool) {
+	errorString := "cachebusterHeader " + header
+	identifier := "Header " + header + " as Cachebuster"
+
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+	var err error
+	var times []int64
+
+	if cache.Indicator == "" {
+		// No Cache Indicator was found. So time will be used as Indicator
+
+		for ii := range 5 * 2 {
 			weburl := Config.Website.Url.String()
+
+			if Config.DoPost {
+				req.Header.SetMethod("POST")
+				req.SetBodyString(Config.Body)
+			} else {
+				req.Header.SetMethod("GET")
+				if Config.Body != "" {
+					req.SetBodyString(Config.Body)
+
+				}
+			}
+			req.SetRequestURI(weburl)
+
+			setRequest(req, Config.DoPost, "", nil, false)
+			if ii%2 == 0 {
+				cbvalue := values[i] + "cb" + randInt()
+				if h := req.Header.Peek(header); h != nil {
+					msg := fmt.Sprintf("Overwriting %s:%s with %s:%s\n", header, h, header, cbvalue)
+					Print(msg, NoColor)
+				}
+				req.Header.Set(header, cbvalue)
+			}
+
+			waitLimiter(errorString)
+			start := time.Now()
+			err = client.Do(req, resp)
+			elapsed := time.Since(start).Milliseconds()
+			times = append(times, elapsed)
+			if err != nil {
+				msg := fmt.Sprintf("%s: http.DefaultClient.Do: %s", errorString, err.Error())
+				Print(msg+"\n", Red)
+				*errSlice = append(*errSlice, errors.New(msg))
+				return false
+			}
+
+			if resp.StatusCode() != Config.Website.StatusCode {
+				msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
+				Print(msg, Yellow)
+			}
+		}
+		msg := fmt.Sprintf("measured times: %d\n", times)
+		PrintVerbose(msg, NoColor, 2)
+
+		skip := false
+		for ii := range times {
+			// Cache miss has to take 30ms (misshitdif) longer than cache hit
+			if ii%2 == 1 && times[ii-1]-times[ii] < int64(Config.HMDiff) {
+				msg := fmt.Sprintf("%s was not successful (Header)\n", identifier)
+				PrintVerbose(msg, NoColor, 2)
+				skip = true
+				break
+			}
+		}
+		if skip {
+			return false
+		}
+
+		cache.TimeIndicator = true
+		cache.CBwasFound = true
+		cache.CBisHeader = true
+		cache.CBisCookie = false
+		cache.CBisHTTPMethod = false
+		cache.CBisParameter = false
+		cache.CBName = header
+
+		msg = fmt.Sprintf("%s was successful (Header, time was used as indicator)\n", identifier)
+		Print(msg, Cyan)
+
+		return true
+	} else {
+		// A hit miss Indicator was found. Sending 2 requests, each with a new cachebuster, expecting 2 misses
+		weburl := Config.Website.Url.String()
+
+		if Config.DoPost {
+			req.Header.SetMethod("POST")
+			req.SetBodyString(Config.Body)
+		} else {
+			req.Header.SetMethod("GET")
+			if Config.Body != "" {
+				req.SetBodyString(Config.Body)
+
+			}
+		}
+		req.SetRequestURI(weburl)
+
+		setRequest(req, Config.DoPost, "", nil, false)
+		cbvalue := values[i] + "cb" + randInt()
+		if h := req.Header.Peek(header); h != nil {
+			msg := fmt.Sprintf("Overwriting %s:%s with %s:%s\n", header, h, header, cbvalue)
+			Print(msg, NoColor)
+		}
+		req.Header.Set(header, cbvalue)
+
+		waitLimiter(errorString)
+		start := time.Now()
+		err = client.Do(req, resp)
+		elapsed := time.Since(start).Milliseconds()
+		times = append(times, elapsed)
+		if err != nil {
+			msg := fmt.Sprintf("%s: http.DefaultClient.Do: %s", errorString, err.Error())
+			Print(msg+"\n", Red)
+			*errSlice = append(*errSlice, errors.New(msg))
+			return false
+		}
+
+		firstUnix := time.Now().Unix()
+
+		if resp.StatusCode() != Config.Website.StatusCode {
+			msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
+			Print(msg, Yellow)
+		}
+
+		respHeader := headerToMultiMap(&resp.Header)
+		hit := false
+		for _, v := range respHeader[cache.Indicator] {
+			indicValue := strings.TrimSpace(strings.ToLower(v))
+			hit = hit || checkCacheHit(indicValue, cache.Indicator)
+		}
+		if hit {
+			// If there is a hit, the cachebuster didn't work
+			msg := fmt.Sprintf("%s was not successful (Header)\n", identifier)
+			PrintVerbose(msg, NoColor, 2)
+			return false
+		} else {
 
 			if Config.DoPost {
 				req.Header.SetMethod("POST")
@@ -581,6 +657,15 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 			req.Header.Set(header, cbvalue)
 
 			waitLimiter(errorString)
+
+			secondUnix := time.Now().Unix()
+			timeDiff := secondUnix - firstUnix
+			// make sure that there is at least 2 sec difference.
+			// So that first req has Age=0 and second req has Age>=2
+			if timeDiff <= 1 && strings.EqualFold("age", cache.Indicator) {
+				time.Sleep(2 * time.Second)
+			}
+
 			start := time.Now()
 			err = client.Do(req, resp)
 			elapsed := time.Since(start).Milliseconds()
@@ -588,11 +673,9 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 			if err != nil {
 				msg := fmt.Sprintf("%s: http.DefaultClient.Do: %s", errorString, err.Error())
 				Print(msg+"\n", Red)
-				errSlice = append(errSlice, errors.New(msg))
-				continue
+				*errSlice = append(*errSlice, errors.New(msg))
+				return false
 			}
-
-			firstUnix := time.Now().Unix()
 
 			if resp.StatusCode() != Config.Website.StatusCode {
 				msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
@@ -609,85 +692,25 @@ func cachebusterHeader(cache *CacheStruct, headerList []string) []error {
 				// If there is a hit, the cachebuster didn't work
 				msg := fmt.Sprintf("%s was not successful (Header)\n", identifier)
 				PrintVerbose(msg, NoColor, 2)
-				continue
+
+				cbNotFoundDifference(times, identifier)
 			} else {
+				cache.CBwasFound = true
+				cache.CBisHeader = true
+				cache.CBisCookie = false
+				cache.CBisHTTPMethod = false
+				cache.CBisParameter = false
+				cache.CBName = header
 
-				if Config.DoPost {
-					req.Header.SetMethod("POST")
-					req.SetBodyString(Config.Body)
-				} else {
-					req.Header.SetMethod("GET")
-					if Config.Body != "" {
-						req.SetBodyString(Config.Body)
+				msg := fmt.Sprintf("%s was successful (Header)\n", identifier)
+				Print(msg, Cyan)
 
-					}
-				}
-				req.SetRequestURI(weburl)
-
-				setRequest(req, Config.DoPost, "", nil, false)
-				cbvalue := values[i] + "cb" + randInt()
-				if h := req.Header.Peek(header); h != nil {
-					msg := fmt.Sprintf("Overwriting %s:%s with %s:%s\n", header, h, header, cbvalue)
-					Print(msg, NoColor)
-				}
-				req.Header.Set(header, cbvalue)
-
-				waitLimiter(errorString)
-
-				secondUnix := time.Now().Unix()
-				timeDiff := secondUnix - firstUnix
-				// make sure that there is at least 2 sec difference.
-				// So that first req has Age=0 and second req has Age>=2
-				if timeDiff <= 1 && strings.EqualFold("age", cache.Indicator) {
-					time.Sleep(2 * time.Second)
-				}
-
-				start := time.Now()
-				err = client.Do(req, resp)
-				elapsed := time.Since(start).Milliseconds()
-				times = append(times, elapsed)
-				if err != nil {
-					msg := fmt.Sprintf("%s: http.DefaultClient.Do: %s", errorString, err.Error())
-					Print(msg+"\n", Red)
-					errSlice = append(errSlice, errors.New(msg))
-					continue
-				}
-
-				if resp.StatusCode() != Config.Website.StatusCode {
-					msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
-					Print(msg, Yellow)
-				}
-
-				respHeader := headerToMultiMap(&resp.Header)
-				hit := false
-				for _, v := range respHeader[cache.Indicator] {
-					indicValue := strings.TrimSpace(strings.ToLower(v))
-					hit = hit || checkCacheHit(indicValue, cache.Indicator)
-				}
-				if hit {
-					// If there is a hit, the cachebuster didn't work
-					msg := fmt.Sprintf("%s was not successful (Header)\n", identifier)
-					PrintVerbose(msg, NoColor, 2)
-
-					cbNotFoundDifference(times, identifier)
-				} else {
-					cache.CBwasFound = true
-					cache.CBisHeader = true
-					cache.CBisCookie = false
-					cache.CBisHTTPMethod = false
-					cache.CBisParameter = false
-					cache.CBName = header
-
-					msg := fmt.Sprintf("%s was successful (Header)\n", identifier)
-					Print(msg, Cyan)
-
-					cbFoundDifference(times, identifier)
-					return errSlice
-				}
+				cbFoundDifference(times, identifier)
+				return true
 			}
 		}
 	}
-	return errSlice
+	return false
 }
 
 func cachebusterParameter(cache *CacheStruct, parameterList []string) []error {
@@ -708,9 +731,6 @@ func cachebusterParameter(cache *CacheStruct, parameterList []string) []error {
 	var errSlice []error
 
 	for i, parameter := range parameters {
-		errorString := "cachebusterParameter"
-		identifier := "Parameter " + parameter + " as Cachebuster"
-
 		if len(values) < i+1 { // prevent index out of range
 			values = append(values, "")
 		}
@@ -719,82 +739,143 @@ func cachebusterParameter(cache *CacheStruct, parameterList []string) []error {
 			continue
 		}
 
-		req := fasthttp.AcquireRequest()
-		resp := fasthttp.AcquireResponse()
-		defer fasthttp.ReleaseRequest(req)
-		defer fasthttp.ReleaseResponse(resp)
-		var err error
-		var times []int64
-
-		if cache.Indicator == "" {
-			// No Cache Indicator was found. So time will be used as Indicator
-
-			var urlCb string
-			for ii := range 5 * 2 {
-				if ii%2 == 0 {
-					urlCb, _ = addCachebusterParameter(Config.Website.Url.String(), values[i], parameter, false)
-				}
-				if Config.DoPost {
-					req.Header.SetMethod("POST")
-					req.SetBodyString(Config.Body)
-				} else {
-					req.Header.SetMethod("GET")
-					if Config.Body != "" {
-						req.SetBodyString(Config.Body)
-
-					}
-				}
-				req.SetRequestURI(urlCb)
-
-				setRequest(req, Config.DoPost, "", nil, false)
-
-				waitLimiter(errorString)
-				start := time.Now()
-				err = client.Do(req, resp)
-				elapsed := time.Since(start).Milliseconds()
-				times = append(times, elapsed)
-				if err != nil {
-					msg := fmt.Sprintf("%s: http.DefaultClient.Do: %s", errorString, err.Error())
-					Print(msg+"\n", Red)
-					errSlice = append(errSlice, errors.New(msg))
-					continue
-				}
-
-				if resp.StatusCode() != Config.Website.StatusCode {
-					msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
-					Print(msg, Yellow)
-				}
-			}
-			msg := fmt.Sprintf("measured times: %d\n", times)
-			PrintVerbose(msg, NoColor, 2)
-
-			skip := false
-			for ii := range times {
-				// Cache miss has to take 30ms (misshitdif) longer than cache hit
-				if ii%2 == 1 && times[ii-1]-times[ii] < int64(Config.HMDiff) {
-					msg := fmt.Sprintf("%s was not successful (Parameter)\n", identifier)
-					PrintVerbose(msg, NoColor, 2)
-					skip = true
-					break
-				}
-			}
-			if skip {
-				continue
-			}
-
-			cache.TimeIndicator = true
-			cache.CBwasFound = true
-			cache.CBisParameter = true
-			cache.CBisHeader = false
-			cache.CBisCookie = false
-			cache.CBisHTTPMethod = false
-			cache.CBName = parameter
-
-			msg = fmt.Sprintf("%s was successful (Parameter, time was used as indicator)\n", identifier)
-			Print(msg, Cyan)
+		found := cachebusterParameterOne(cache, i, parameter, values, &errSlice)
+		if found {
 			return errSlice
+		}
+	}
+	return errSlice
+}
+
+// cachebusterParameterOne tests a single parameter as cachebuster. Wrapped in
+// its own function so req/resp are released at the end of every iteration
+// instead of piling up until cachebusterParameter itself returns (parameters
+// can come from a multi-thousand-entry wordlist).
+func cachebusterParameterOne(cache *CacheStruct, i int, parameter string, values []string, errSlice *[]error) (found bool) {
+	errorString := "cachebusterParameter"
+	identifier := "Parameter " + parameter + " as Cachebuster"
+
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+	var err error
+	var times []int64
+
+	if cache.Indicator == "" {
+		// No Cache Indicator was found. So time will be used as Indicator
+
+		var urlCb string
+		for ii := range 5 * 2 {
+			if ii%2 == 0 {
+				urlCb, _ = addCachebusterParameter(Config.Website.Url.String(), values[i], parameter, false)
+			}
+			if Config.DoPost {
+				req.Header.SetMethod("POST")
+				req.SetBodyString(Config.Body)
+			} else {
+				req.Header.SetMethod("GET")
+				if Config.Body != "" {
+					req.SetBodyString(Config.Body)
+
+				}
+			}
+			req.SetRequestURI(urlCb)
+
+			setRequest(req, Config.DoPost, "", nil, false)
+
+			waitLimiter(errorString)
+			start := time.Now()
+			err = client.Do(req, resp)
+			elapsed := time.Since(start).Milliseconds()
+			times = append(times, elapsed)
+			if err != nil {
+				msg := fmt.Sprintf("%s: http.DefaultClient.Do: %s", errorString, err.Error())
+				Print(msg+"\n", Red)
+				*errSlice = append(*errSlice, errors.New(msg))
+				return false
+			}
+
+			if resp.StatusCode() != Config.Website.StatusCode {
+				msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
+				Print(msg, Yellow)
+			}
+		}
+		msg := fmt.Sprintf("measured times: %d\n", times)
+		PrintVerbose(msg, NoColor, 2)
+
+		skip := false
+		for ii := range times {
+			// Cache miss has to take 30ms (misshitdif) longer than cache hit
+			if ii%2 == 1 && times[ii-1]-times[ii] < int64(Config.HMDiff) {
+				msg := fmt.Sprintf("%s was not successful (Parameter)\n", identifier)
+				PrintVerbose(msg, NoColor, 2)
+				skip = true
+				break
+			}
+		}
+		if skip {
+			return false
+		}
+
+		cache.TimeIndicator = true
+		cache.CBwasFound = true
+		cache.CBisParameter = true
+		cache.CBisHeader = false
+		cache.CBisCookie = false
+		cache.CBisHTTPMethod = false
+		cache.CBName = parameter
+
+		msg = fmt.Sprintf("%s was successful (Parameter, time was used as indicator)\n", identifier)
+		Print(msg, Cyan)
+		return true
+	} else {
+		// A hit miss Indicator was found. Sending 2 requests, each with a new cachebuster, expecting 2 misses
+		urlCb, _ := addCachebusterParameter(Config.Website.Url.String(), values[i], parameter, false)
+
+		if Config.DoPost {
+			req.Header.SetMethod("POST")
+			req.SetBodyString(Config.Body)
 		} else {
-			// A hit miss Indicator was found. Sending 2 requests, each with a new cachebuster, expecting 2 misses
+			req.Header.SetMethod("GET")
+			if Config.Body != "" {
+				req.SetBodyString(Config.Body)
+
+			}
+		}
+		req.SetRequestURI(urlCb)
+
+		setRequest(req, Config.DoPost, "", nil, false)
+		waitLimiter(errorString)
+		start := time.Now()
+		err = client.Do(req, resp)
+		elapsed := time.Since(start).Milliseconds()
+		times = append(times, elapsed)
+		if err != nil {
+			msg := fmt.Sprintf("%s: http.DefaultClient.Do: %s", errorString, err.Error())
+			Print(msg+"\n", Red)
+			*errSlice = append(*errSlice, errors.New(msg))
+			return false
+		}
+
+		firstUnix := time.Now().Unix()
+
+		if resp.StatusCode() != Config.Website.StatusCode {
+			msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
+			Print(msg, Yellow)
+		}
+
+		respHeader := headerToMultiMap(&resp.Header)
+		hit := false
+		for _, v := range respHeader[cache.Indicator] {
+			indicValue := strings.TrimSpace(strings.ToLower(v))
+			hit = hit || checkCacheHit(indicValue, cache.Indicator)
+		}
+		if hit {
+			// If there is a hit, the cachebuster didn't work
+			msg := fmt.Sprintf("%s was not successful (Parameter)\n", identifier)
+			PrintVerbose(msg, NoColor, 2)
+		} else {
 			urlCb, _ := addCachebusterParameter(Config.Website.Url.String(), values[i], parameter, false)
 
 			if Config.DoPost {
@@ -811,6 +892,15 @@ func cachebusterParameter(cache *CacheStruct, parameterList []string) []error {
 
 			setRequest(req, Config.DoPost, "", nil, false)
 			waitLimiter(errorString)
+
+			secondUnix := time.Now().Unix()
+			timeDiff := secondUnix - firstUnix
+			// make sure that there is at least 2 sec difference.
+			// So that first req has Age=0 and second req has Age>=2
+			if timeDiff <= 1 && strings.EqualFold("age", cache.Indicator) {
+				time.Sleep(2 * time.Second)
+			}
+
 			start := time.Now()
 			err = client.Do(req, resp)
 			elapsed := time.Since(start).Milliseconds()
@@ -818,11 +908,9 @@ func cachebusterParameter(cache *CacheStruct, parameterList []string) []error {
 			if err != nil {
 				msg := fmt.Sprintf("%s: http.DefaultClient.Do: %s", errorString, err.Error())
 				Print(msg+"\n", Red)
-				errSlice = append(errSlice, errors.New(msg))
-				continue
+				*errSlice = append(*errSlice, errors.New(msg))
+				return false
 			}
-
-			firstUnix := time.Now().Unix()
 
 			if resp.StatusCode() != Config.Website.StatusCode {
 				msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
@@ -839,80 +927,27 @@ func cachebusterParameter(cache *CacheStruct, parameterList []string) []error {
 				// If there is a hit, the cachebuster didn't work
 				msg := fmt.Sprintf("%s was not successful (Parameter)\n", identifier)
 				PrintVerbose(msg, NoColor, 2)
+
+				cbNotFoundDifference(times, identifier)
 			} else {
-				urlCb, _ := addCachebusterParameter(Config.Website.Url.String(), values[i], parameter, false)
+				cache.CBwasFound = true
+				cache.CBisParameter = true
+				cache.CBisHeader = false
+				cache.CBisCookie = false
+				cache.CBisHTTPMethod = false
+				cache.CBName = parameter
 
-				if Config.DoPost {
-					req.Header.SetMethod("POST")
-					req.SetBodyString(Config.Body)
-				} else {
-					req.Header.SetMethod("GET")
-					if Config.Body != "" {
-						req.SetBodyString(Config.Body)
+				msg := fmt.Sprintf("%s was successful (Parameter)\n", identifier)
+				Print(msg, Cyan)
 
-					}
-				}
-				req.SetRequestURI(urlCb)
+				cbFoundDifference(times, identifier)
 
-				setRequest(req, Config.DoPost, "", nil, false)
-				waitLimiter(errorString)
-
-				secondUnix := time.Now().Unix()
-				timeDiff := secondUnix - firstUnix
-				// make sure that there is at least 2 sec difference.
-				// So that first req has Age=0 and second req has Age>=2
-				if timeDiff <= 1 && strings.EqualFold("age", cache.Indicator) {
-					time.Sleep(2 * time.Second)
-				}
-
-				start := time.Now()
-				err = client.Do(req, resp)
-				elapsed := time.Since(start).Milliseconds()
-				times = append(times, elapsed)
-				if err != nil {
-					msg := fmt.Sprintf("%s: http.DefaultClient.Do: %s", errorString, err.Error())
-					Print(msg+"\n", Red)
-					errSlice = append(errSlice, errors.New(msg))
-					continue
-				}
-
-				if resp.StatusCode() != Config.Website.StatusCode {
-					msg := fmt.Sprintf("%s: Unexpected Status Code: %d\n", errorString, resp.StatusCode())
-					Print(msg, Yellow)
-				}
-
-				respHeader := headerToMultiMap(&resp.Header)
-				hit := false
-				for _, v := range respHeader[cache.Indicator] {
-					indicValue := strings.TrimSpace(strings.ToLower(v))
-					hit = hit || checkCacheHit(indicValue, cache.Indicator)
-				}
-				if hit {
-					// If there is a hit, the cachebuster didn't work
-					msg := fmt.Sprintf("%s was not successful (Parameter)\n", identifier)
-					PrintVerbose(msg, NoColor, 2)
-
-					cbNotFoundDifference(times, identifier)
-				} else {
-					cache.CBwasFound = true
-					cache.CBisParameter = true
-					cache.CBisHeader = false
-					cache.CBisCookie = false
-					cache.CBisHTTPMethod = false
-					cache.CBName = parameter
-
-					msg := fmt.Sprintf("%s was successful (Parameter)\n", identifier)
-					Print(msg, Cyan)
-
-					cbFoundDifference(times, identifier)
-
-					return errSlice
-				}
+				return true
 			}
 		}
 	}
 
-	return errSlice
+	return false
 }
 
 func cachebusterHTTPMethod(cache *CacheStruct) []error {
