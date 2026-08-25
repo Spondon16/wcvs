@@ -1,0 +1,28 @@
+name: Release
+
+# Builds cross-platform binaries with the existing buildBinariesLinux.sh
+# script and publishes them to a GitHub Release whenever a v* tag is pushed.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build release archives
+        run: bash buildBinariesLinux.sh "${GITHUB_REF_NAME#v}"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/*
+          generate_release_notes: true

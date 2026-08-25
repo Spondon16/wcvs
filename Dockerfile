@@ -7,7 +7,7 @@ RUN go get -d -v ./...
 RUN go build -o wcvs
 
 # RUNNING
-FROM debian:buster
+FROM debian:bookworm-slim
 RUN mkdir /app
 COPY --from=builder /go/src/app/wcvs /wcvs
 WORKDIR /app/

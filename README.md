@@ -3,6 +3,7 @@
 </h1>
 
 <p align="center">
+  <a href="https://github.com/Spondon16/wcvs/actions/workflows/ci.yml"><img src="https://github.com/Spondon16/wcvs/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Spondon16/wcvs/releases/latest"><img src="https://img.shields.io/github/release/Spondon16/wcvs.svg?color=brightgreen" alt="Release"></a>
   <a href="https://goreportcard.com/report/github.com/Spondon16/wcvs"><img src="https://goreportcard.com/badge/github.com/Spondon16/wcvs" alt="Go Report Card"></a>
   <a href="https://golang.org/"><img src="https://img.shields.io/github/go-mod/go-version/Spondon16/wcvs" alt="Go Version"></a>
@@ -45,12 +46,13 @@ Based on the original by [Hackmanit](https://hackmanit.de) and [Maximilian Hilde
 - **Path traversal** — using `/../`, `/%2e%2e/`, double-encoded, and Tomcat-style (`/..;/`) traversals targeting `.css`, `.js`, and `/robots.txt`
 - **Origin server normalization exploitation** — cache keys a path under a static prefix (e.g., `/static/`), while the origin decodes `%2F..%2F` and serves the sensitive resource
 - **Single-level encoded path traversal to `/robots.txt`** — using delimiters like `;`, `?`, `&`, `%0A`, `%09`, `%00`, `%3B`, `%23`, `%3F`, `%26` followed by `%2f%2e%2e%2frobots.txt`
-- **Special character delimiters** — both encoded (`%0A`, `%09`, `%00`, `%3B`, `%23`, `%3F`, `%26`) and literal (`;`, `?`, `&`) before static-looking extensions
+- **Special character delimiters** — both encoded (`%0A`, `%09`, `%00`, `%3B`, `%23`, `%3F`, `%26`) and literal (`;`, `?`, `&`, `,`, `|`) before static-looking extensions
 - **Double URL-encoding** — `%252e%252e%2F` and `%252F..%252F` style traversals
-- **Multiple static file extensions** — `.css`, `.js`, `.png`, `.ico`, `.woff2`, `.svg`, `.json`
+- **Multiple static file extensions** — `.css`, `.js`, `.mjs`, `.ts`, `.png`, `.ico`, `.woff2`, `.svg`, `.avif`, `.bmp`, `.mp4`, `.pdf`, `.xml`, `.zip`, `.json`
 
 ### Additional Capabilities
 - Automatic web cache fingerprinting before testing (adapts strategy per cache type)
+- Cloud/CDN-specific unkeyed forwarding-header tests (CloudFront, Cloudflare, Akamai, Azure Front Door, GCP Cloud CDN, Kong)
 - JSON report generation (with optional HTML special-character escaping)
 - Built-in URL crawler with configurable depth, domain filtering, and exclusions
 - Proxy support (Burp Suite, OWASP ZAP, etc.)
@@ -72,6 +74,7 @@ Based on the original by [Hackmanit](https://hackmanit.de) and [Maximilian Hilde
 | Tomcat-style traversal | `/..;/nonexistent.css` | Uses `..;` path traversal |
 | Special char + extension | `%0Anonexistent.css` | Newline or other control chars before extension |
 | Query/fragment injection | `?nonexistent.css` | Question mark before static-looking path |
+| Comma/pipe delimiter | `,nonexistent.css` / `\|nonexistent.css` | Delimiters some frameworks split on but caches don't |
 
 ---
 
@@ -132,6 +135,14 @@ wcvs -u https://example.com -sc "PHPSESSID=123"
 wcvs -u https://example.com -sh "Referer: localhost"
 wcvs -u https://example.com -post -sb "admin=true"
 ```
+
+### Scan Over HTTP/2
+
+```bash
+wcvs -u https://example.com -http2
+```
+
+TLS/ALPN HTTP/2 only — no cleartext h2c, no proxy support yet. Header/parameter poisoning, cache deception, and fingerprinting are tested over the real HTTP/2 connection; request smuggling (an HTTP/1.1-specific desync) and the header-oversize/meta-character/CRLF-splice techniques don't have an HTTP/2 equivalent and will surface as request errors instead of false results.
 
 ### Generate a JSON Report
 
